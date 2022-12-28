@@ -9,7 +9,9 @@ interface UserContract {
 }
 
 class User extends Contracts {
-  changeMethods = ['register', 'login', 'get_friend_list']
+  changeMethods = ['register', 'login', 'add_friend']
+
+  viewMethods = ['get_friend_list']
 
   contract(): UserContract {
     return (this._contract as unknown) as UserContract

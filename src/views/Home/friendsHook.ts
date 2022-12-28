@@ -25,6 +25,8 @@ export default (): void => {
       ...friend,
       peerId: savedCallback.current[index]?.peerId,
     }))
+    console.log(`friens:`, _friens)
+    
     dispatch(setFriends(_friens))
   }
 

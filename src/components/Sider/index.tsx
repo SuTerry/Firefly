@@ -21,7 +21,7 @@ export default (): JSX.Element => {
 
   const local = langHook()
 
-  const { friends, currentFriendIndex } = useAppSelector(
+  const { friends, currentFriendIndex, currentFriend } = useAppSelector(
     (state) => state.friends
   )
 
@@ -46,8 +46,8 @@ export default (): JSX.Element => {
   }
 
   useEffect(() => {
-    dispatch(setCurrentFriendIndex(0))
-  }, [])
+    if (!currentFriend) dispatch(setCurrentFriendIndex(0))
+  }, [friends])
 
   return (
     <Box

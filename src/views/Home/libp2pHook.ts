@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { pipe } from 'it-pipe'
 
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
@@ -27,7 +27,7 @@ export default (): Libp2pResult => {
 
   const dispatch = useAppDispatch()
 
-  const [topices, setTopices] = useState<string[]>([])
+  const friendsCallback = useRef<Friends[]>([])
 
   const handle = async ({ connection, stream }: IncomingStreamData) => {
     const key = connection.remotePeer.toString()
@@ -35,6 +35,8 @@ export default (): Libp2pResult => {
       for await (const msg of source) {
         const str = uint8ArrayToString(msg.subarray())
         const peer = JSON.parse(str)
+        console.log('handle-friends', friends)
+
         const friend = friends.find((friend) => friend.hash === peer.hash)
         switch (peer.type) {
           case 'greet':
@@ -63,11 +65,11 @@ export default (): Libp2pResult => {
   const peerDiscovery = async (evt: CustomEvent<PeerInfo>) => {
     if (!libp2p) return
     const key = evt.detail.id.toString()
-    const friend = friends.find((friend) => friend.hash === key)
+    const friend = friendsCallback.current.find((friend) => friend.hash === key)
     if (!friend) return
     if (hashMap.hasOwnProperty(key) && hashMap[key].peerId) return
     hashMap[key] = { ...friend }
-    libp2p.dial(evt.detail.id)
+    libp2p.dial(evt.detail.id).catch((error) => error)
   }
 
   const peerConnect = async (evt: CustomEvent<Connection>) => {
@@ -77,6 +79,7 @@ export default (): Libp2pResult => {
     const firend = hashMap[key]
     if (!firend) return
     if (firend.peerId) return
+    console.log(`connect:${firend.name}`)
     firend.peerId = connection.remotePeer
     const val = JSON.stringify({
       type: 'greet',
@@ -97,7 +100,6 @@ export default (): Libp2pResult => {
   const init = async () => {
     if (!libp2p) return
 
-    libp2p.unhandle(topices)
     libp2p.removeEventListener('peer:discovery', peerDiscovery)
     libp2p.connectionManager.removeEventListener('peer:connect', peerConnect)
     libp2p.connectionManager.removeEventListener(
@@ -105,7 +107,6 @@ export default (): Libp2pResult => {
       peerDisconnect
     )
 
-    libp2p.handle(topices, handle)
     libp2p.addEventListener('peer:discovery', peerDiscovery)
     libp2p.connectionManager.addEventListener('peer:connect', peerConnect)
     libp2p.connectionManager.addEventListener('peer:disconnect', peerDisconnect)
@@ -136,19 +137,27 @@ export default (): Libp2pResult => {
   }
 
   const updateFriends = (_friend: Friends) => {
-    const _friends = [...friends]
-    const index = friends.findIndex((friend) => friend.hash === _friend.hash)
+    const _friends = [...friendsCallback.current]
+    const index = friendsCallback.current.findIndex(
+      (friend) => friend.hash === _friend.hash
+    )
     _friends.splice(index, 1, _friend)
     dispatch(setFriends(_friends))
   }
 
   useEffect(() => {
+    console.log(`libp2pPeerId:${libp2p!.peerId.toString()}`)
     init()
-  }, [libp2p, topices])
+  }, [])
 
   useEffect(() => {
-    const _topices = friends.map((friend) => friend.topic)
-    setTopices(_topices)
+    friendsCallback.current = friends
+  })
+
+  useEffect(() => {
+    const topices = friends.map((friend) => friend.topic)
+    libp2p.unhandle(topices)
+    libp2p.handle(topices, handle)
   }, [friends])
 
   return { send }
