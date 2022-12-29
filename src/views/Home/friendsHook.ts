@@ -18,7 +18,7 @@ export default (): void => {
   const savedCallback = useRef<Friends[]>([])
 
   const getFriends = async () => {
-    const res = await userApi.get_friend_list(accountAddress)
+    const res = await userApi.get_friend_list(accountAddress)   
     const strFriends = JSON.stringify(res)
     if (strFriends === originaFriends) return
     originaFriends = strFriends
@@ -26,7 +26,6 @@ export default (): void => {
       ...friend,
       peerId: savedCallback.current[index]?.peerId,
     }))
-    console.log(`friens:`, _friens)
 
     dispatch(
       setFriends(_friens)

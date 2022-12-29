@@ -8,7 +8,6 @@ import { useAppSelector } from '@store/index'
 import Chat from './Chat'
 
 export default (): JSX.Element => {
-
   const { send } = libp2pHook()
   friendsHook()
 
@@ -24,12 +23,12 @@ export default (): JSX.Element => {
           hidden={currentFriendIndex !== index}
           id={`vertical-tabpanel-${index}`}
           aria-labelledby={`vertical-tab-${index}`}
-          key={friend.hash}
-          style={{
-            visibility: currentFriendIndex === index ? 'visible' : 'hidden',
-          }}
+          key={friend.account_id}
+          // style={{
+          //   visibility: currentFriendIndex === index ? 'visible' : 'hidden',
+          // }}
         >
-          <Chat friend={friend} send={send} />
+          {currentFriendIndex === index && <Chat friend={friend} send={send} />}
         </div>
       ))}
     </>

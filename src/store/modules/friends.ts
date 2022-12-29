@@ -6,6 +6,7 @@ export interface Friends {
   image: string
   topic: string
   hash: string
+  account_id: string
   peerId?: PeerId
 }
 

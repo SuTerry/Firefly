@@ -6,7 +6,6 @@ export const getNearWallet = (): boolean =>
   typeof window.near !== 'undefined' && window.near.isSender
 
 export const connectWallet: () => Promise<string> = async () => {
-
   const { accessKey } = await window.near?.requestSignIn({
     contractId: CONTRACTID,
   })
@@ -21,7 +20,6 @@ export const getAccountId = (): string => {
   accountId = window.near.getAccountId()
   return accountId
 }
-
 
 export const onWalletEvent: () => Promise<void> = async () => {
   if (!window.near) return

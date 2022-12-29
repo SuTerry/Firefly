@@ -1,6 +1,6 @@
-import React, { useState, useEffect, KeyboardEvent } from 'react'
+import React, { useEffect } from 'react'
 
-import { Box, Divider, IconButton, Stack, Typography } from '@mui/material'
+import { Box, Divider, Typography } from '@mui/material'
 
 import { useAppSelector, useAppDispatch } from '@store/index'
 import { Friends, setRemotes } from '@store/modules/friends'
@@ -8,13 +8,10 @@ import { Friends, setRemotes } from '@store/modules/friends'
 import langHook from '@hooks/localHook'
 import { chatLang } from '@langs/index'
 
-import { AddIcCall, Videocam } from '@mui/icons-material'
-
 import type { Send } from '../libp2pHook'
 
 import talk from './Talk'
-
-import './index.less'
+import Operate from './Operate'
 
 interface ChatProps {
   friend: Friends
@@ -22,20 +19,14 @@ interface ChatProps {
 }
 
 export default ({ friend, send }: ChatProps): JSX.Element => {
+
   const { remotes } = useAppSelector((store) => store.friends)
 
   const dispatch = useAppDispatch()
 
   const local = langHook()
 
-  const { Talk, self, remote } = talk()
-  const [text, setText] = useState('')
-  const handleEnter = (event: KeyboardEvent) => {
-    if (event.which !== 13) return
-    send(text, friend)
-    self(text)
-    setText('')
-  }
+  const { Talk, self, remote } = talk({ account_id: friend.account_id })
 
   useEffect(() => {
     if (remotes.length > 0) {
@@ -43,6 +34,7 @@ export default ({ friend, send }: ChatProps): JSX.Element => {
       const index = _remotes.findIndex(
         (_remote) => _remote.hash === friend.hash
       )
+      if (index < 0) return
       const _remote = _remotes[index]
       remote(_remote.text)
       _remotes.splice(index, 1)
@@ -59,29 +51,9 @@ export default ({ friend, send }: ChatProps): JSX.Element => {
       }}
     >
       <Talk />
-      {friend.peerId ? (
-        <Box sx={{ height: 240 }}>
-          <Divider />
-          <Stack
-            sx={{ pr: 2, mb: 1 }}
-            direction="row"
-            justifyContent="flex-end"
-            spacing={2}
-          >
-            <IconButton>
-              <AddIcCall />
-            </IconButton>
-            <IconButton>
-              <Videocam />
-            </IconButton>
-          </Stack>
-          <textarea
-            className="textarea"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={handleEnter}
-          ></textarea>
-        </Box>
+      {/* {friend.peerId ? ( */}
+      {friend.name ? (
+        <Operate send={send} self={self} friend={friend} />
       ) : (
         <Box sx={{ height: 240 }}>
           <Divider />

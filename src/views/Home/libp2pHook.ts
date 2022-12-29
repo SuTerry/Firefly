@@ -35,14 +35,16 @@ export default (): Libp2pResult => {
       for await (const msg of source) {
         const str = uint8ArrayToString(msg.subarray())
         const peer = JSON.parse(str)
-        console.log('handle-friends', friends)
         const friend = friends.find((friend) => friend.hash === peer.hash)
+        console.log('friend', friend)
+        console.log('peer', peer)
         switch (peer.type) {
           case 'greet':
             if (!friend) return
             if (hashMap.hasOwnProperty(key) && hashMap[key].peerId) return
             hashMap[key] = { ...friend }
             hashMap[key].peerId = connection.remotePeer
+            hashMap[key].hash = peer.hash
             updateFriends(hashMap[key])
             break
           case 'information':
@@ -91,6 +93,7 @@ export default (): Libp2pResult => {
     const key = evt.detail.remotePeer.toString()
     if (!hashMap.hasOwnProperty(key)) return
     const friend = { ...hashMap[key] }
+    console.log(`quit: ${friend.name}`)
     delete hashMap[key]
     friend.peerId = undefined
     updateFriends(friend)
@@ -156,8 +159,8 @@ export default (): Libp2pResult => {
 
   useEffect(() => {
     const topices = friends.map((friend) => friend.topic)
-    libp2p.unhandle(topices)
-    libp2p.handle(topices, handle)
+    libp2p?.unhandle(topices)
+    libp2p?.handle(topices, handle)
   }, [friends])
 
   return { send }
