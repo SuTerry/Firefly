@@ -38,6 +38,7 @@ export default ({ children }: IProps): JSX.Element => {
               children
             ) : (
               <Navigate to="/login" />
+              // children
             )
           ) : (
             <Navigate to="/connect" />

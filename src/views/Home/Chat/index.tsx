@@ -1,9 +1,12 @@
 import React, { useState, useEffect, KeyboardEvent } from 'react'
 
-import { Box, Divider, IconButton, Stack } from '@mui/material'
+import { Box, Divider, IconButton, Stack, Typography } from '@mui/material'
 
 import { useAppSelector, useAppDispatch } from '@store/index'
 import { Friends, setRemotes } from '@store/modules/friends'
+
+import langHook from '@hooks/localHook'
+import { chatLang } from '@langs/index'
 
 import { AddIcCall, Videocam } from '@mui/icons-material'
 
@@ -23,6 +26,8 @@ export default ({ friend, send }: ChatProps): JSX.Element => {
 
   const dispatch = useAppDispatch()
 
+  const local = langHook()
+
   const { Talk, self, remote } = talk()
   const [text, setText] = useState('')
   const handleEnter = (event: KeyboardEvent) => {
@@ -35,7 +40,9 @@ export default ({ friend, send }: ChatProps): JSX.Element => {
   useEffect(() => {
     if (remotes.length > 0) {
       const _remotes = [...remotes]
-      const index = _remotes.findIndex(_remote => _remote.hash === friend.hash)
+      const index = _remotes.findIndex(
+        (_remote) => _remote.hash === friend.hash
+      )
       const _remote = _remotes[index]
       remote(_remote.text)
       _remotes.splice(index, 1)
@@ -52,28 +59,37 @@ export default ({ friend, send }: ChatProps): JSX.Element => {
       }}
     >
       <Talk />
-      <Box sx={{ height: 240 }}>
-        <Divider />
-        <Stack
-          sx={{ pr: 2, mb: 1 }}
-          direction="row"
-          justifyContent="flex-end"
-          spacing={2}
-        >
-          <IconButton>
-            <AddIcCall />
-          </IconButton>
-          <IconButton>
-            <Videocam />
-          </IconButton>
-        </Stack>
-        <textarea
-          className="textarea"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleEnter}
-        ></textarea>
-      </Box>
+      {friend.peerId ? (
+        <Box sx={{ height: 240 }}>
+          <Divider />
+          <Stack
+            sx={{ pr: 2, mb: 1 }}
+            direction="row"
+            justifyContent="flex-end"
+            spacing={2}
+          >
+            <IconButton>
+              <AddIcCall />
+            </IconButton>
+            <IconButton>
+              <Videocam />
+            </IconButton>
+          </Stack>
+          <textarea
+            className="textarea"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleEnter}
+          ></textarea>
+        </Box>
+      ) : (
+        <Box sx={{ height: 240 }}>
+          <Divider />
+          <Typography sx={{ lineHeight: '239px', textAlign: 'center' }}>
+            {local(chatLang.notConnect) + friend.name}
+          </Typography>
+        </Box>
+      )}
     </Box>
   )
 }

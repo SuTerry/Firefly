@@ -36,7 +36,6 @@ export default (): Libp2pResult => {
         const str = uint8ArrayToString(msg.subarray())
         const peer = JSON.parse(str)
         console.log('handle-friends', friends)
-
         const friend = friends.find((friend) => friend.hash === peer.hash)
         switch (peer.type) {
           case 'greet':
@@ -130,6 +129,7 @@ export default (): Libp2pResult => {
       const key = peer.toString()
       updateFriends(hashMap[key])
     } catch (error) {
+      console.log(`fail: ${peer}`)
       setTimeout(() => {
         greet(peer, topic, val)
       }, 60 * 1000)

@@ -11,13 +11,14 @@ let originaFriends = ''
 
 export default (): void => {
   const { friends } = useAppSelector((store) => store.friends)
+  const { accountAddress } = useAppSelector((store) => store.wallet)
 
   const dispatch = useAppDispatch()
 
   const savedCallback = useRef<Friends[]>([])
 
   const getFriends = async () => {
-    const res = await userApi.get_friend_list()
+    const res = await userApi.get_friend_list(accountAddress)
     const strFriends = JSON.stringify(res)
     if (strFriends === originaFriends) return
     originaFriends = strFriends
@@ -26,8 +27,10 @@ export default (): void => {
       peerId: savedCallback.current[index]?.peerId,
     }))
     console.log(`friens:`, _friens)
-    
-    dispatch(setFriends(_friens))
+
+    dispatch(
+      setFriends(_friens)
+    )
   }
 
   useEffect(() => {
@@ -36,7 +39,7 @@ export default (): void => {
 
   useEffect(() => {
     getFriends()
-    timer = setInterval(getFriends, 60 * 1000)
+    // timer = setInterval(getFriends, 60 * 1000)
 
     return () => clearInterval(timer)
   }, [])

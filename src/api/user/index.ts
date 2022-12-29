@@ -25,8 +25,8 @@ class User extends Contracts {
     return this.contract().login({ hash })
   }
 
-  async get_friend_list(): Promise<Friends[]> {
-    return this.contract().get_friend_list()
+  async get_friend_list(account_id: string): Promise<Friends[]> {
+    return this.contract().get_friend_list({ account_id })
   }
 
   async add_friend(friend_account_id: string): Promise<boolean> {
