@@ -39,7 +39,7 @@ export default (): void => {
 
   useEffect(() => {
     getFriends()
-    // timer = setInterval(getFriends, 60 * 1000)
+    timer = setInterval(getFriends, 60 * 1000)
 
     return () => clearInterval(timer)
   }, [])
