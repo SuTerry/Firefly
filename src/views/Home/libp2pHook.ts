@@ -43,6 +43,9 @@ export default (): Libp2pResult => {
         if (!friend) return
         switch (action.type) {
           case 'greet':
+            console.log(friend, 'friend')
+            console.log(hashMap[key], 'hashMap[key]')
+
             if (friend.peerId) return
             if (!hashMap[key].account_id) {
               hashMap[key] = Object.assign(hashMap[key], friend)
@@ -91,6 +94,8 @@ export default (): Libp2pResult => {
         hash: key,
         peerId: connection.remotePeer,
       }
+    } else {
+      hashMap[key].peerId = connection.remotePeer
     }
 
     const friend = friendsCallback.current.find(
