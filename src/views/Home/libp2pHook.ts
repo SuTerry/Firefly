@@ -82,15 +82,17 @@ export default (): Libp2pResult => {
     const connection = evt.detail
     const key = connection.remotePeer.toString()
     console.log(`connect: ${key}`)
-    if (hashMap.hasOwnProperty(key)) return
-    hashMap[key] = {
-      name: '',
-      image: '',
-      topic: '',
-      account_id: '',
-      hash: key,
-      peerId: connection.remotePeer,
+    if (!hashMap.hasOwnProperty(key)) {
+      hashMap[key] = {
+        name: '',
+        image: '',
+        topic: '',
+        account_id: '',
+        hash: key,
+        peerId: connection.remotePeer,
+      }
     }
+
     const friend = friendsCallback.current.find(
       (_friend) => _friend.hash === key
     )
