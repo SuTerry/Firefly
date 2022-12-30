@@ -6,7 +6,19 @@ import { mplex } from '@libp2p/mplex'
 import { bootstrap } from '@libp2p/bootstrap'
 
 export default async (): Promise<Libp2p> => {
-  const wrtcStar = webRTCStar()
+  const wrtcStar = webRTCStar({
+    listenerOptions: {
+      config: {
+        iceServers: [
+          { url: 'stun:stun.gmx.net:3478' },
+          { url: 'stun:stun.l.google.com:19302' },
+          { url: 'stun:stun1.l.google.com:19302' },
+          { url: 'stun:stun2.l.google.com:19302' },
+          { url: 'stun:stun3.l.google.com:19302' },
+        ],
+      },
+    },
+  })
   return createLibp2p({
     addresses: {
       listen: [
