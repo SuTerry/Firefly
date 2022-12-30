@@ -74,15 +74,15 @@ export default (): Libp2pResult => {
     if (hashMap.hasOwnProperty(key) && hashMap[key].peerId) return
     hashMap[key] = { ...friend }
     console.log(`discovery: ${friend.name}, peerId: ${key}`)
-    libp2p.dial(evt.detail.id).catch((error) => error)
+    libp2p.dial(evt.detail.id).catch((error) => console.log(error))
   }
 
   const peerConnect = async (evt: CustomEvent<Connection>) => {
     if (!libp2p) return
     const connection = evt.detail
     const key = connection.remotePeer.toString()
-    if (hashMap.hasOwnProperty(key)) return
     console.log(`connect: ${key}`)
+    if (hashMap.hasOwnProperty(key)) return
     hashMap[key] = {
       name: '',
       image: '',
