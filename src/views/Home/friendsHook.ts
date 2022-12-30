@@ -25,6 +25,7 @@ export default (): void => {
     const _friens = res.map((friend, index) => ({
       ...friend,
       peerId: savedCallback.current[index]?.peerId,
+      connected: savedCallback.current[index]?.connected,
     }))
 
     dispatch(

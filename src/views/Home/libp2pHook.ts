@@ -24,6 +24,7 @@ const hashMap: Record<string, Friends> = {}
 export default (): Libp2pResult => {
   const { friends, remotes } = useAppSelector((state) => state.friends)
   const { libp2p } = useAppSelector((state) => state.user)
+  const { accountAddress } = useAppSelector((state) => state.wallet)
 
   const dispatch = useAppDispatch()
 
@@ -34,25 +35,27 @@ export default (): Libp2pResult => {
     pipe(stream, async function (source) {
       for await (const msg of source) {
         const str = uint8ArrayToString(msg.subarray())
-        const peer = JSON.parse(str)
-        const friend = friends.find((friend) => friend.hash === peer.hash)
-        console.log('friend', friend)
-        console.log('peer', peer)
-        switch (peer.type) {
+        const action = JSON.parse(str)
+        console.log('action', action)
+        const friend = friends.find(
+          (_friend) => _friend.account_id === action.account_id
+        )
+        if (!friend) return
+        switch (action.type) {
           case 'greet':
-            if (!friend) return
-            if (hashMap.hasOwnProperty(key) && hashMap[key].peerId) return
-            hashMap[key] = { ...friend }
-            hashMap[key].peerId = connection.remotePeer
-            hashMap[key].hash = peer.hash
+            if (friend.peerId) return
+            if (!hashMap[key].account_id) {
+              hashMap[key] = Object.assign(hashMap[key], friend)
+              greet(connection.remotePeer, friend.topic)
+            }
+            console.log(`connected: ${friend.name}, peer: ${key}`)
             updateFriends(hashMap[key])
             break
           case 'information':
-            if (!friend) return
             const _remotes = [...remotes]
             _remotes.push({
-              hash: friend.hash,
-              text: peer.text,
+              account_id: friend.account_id,
+              text: action.text,
             })
             dispatch(setRemotes(_remotes))
             break
@@ -70,23 +73,31 @@ export default (): Libp2pResult => {
     if (!friend) return
     if (hashMap.hasOwnProperty(key) && hashMap[key].peerId) return
     hashMap[key] = { ...friend }
+    console.log(`discovery: ${friend.name}, peerId: ${key}`)
     libp2p.dial(evt.detail.id).catch((error) => error)
   }
 
   const peerConnect = async (evt: CustomEvent<Connection>) => {
     if (!libp2p) return
     const connection = evt.detail
-    const key = evt.detail.remotePeer.toString()
-    const firend = hashMap[key]
-    if (!firend) return
-    if (firend.peerId) return
-    console.log(`connect:${firend.name}`)
-    firend.peerId = connection.remotePeer
-    const val = JSON.stringify({
-      type: 'greet',
-      hash: firend.hash,
-    })
-    greet(connection.remotePeer, firend.topic, val)
+    const key = connection.remotePeer.toString()
+    if (hashMap.hasOwnProperty(key)) return
+    console.log(`connect: ${key}`)
+    hashMap[key] = {
+      name: '',
+      image: '',
+      topic: '',
+      account_id: '',
+      hash: key,
+      peerId: connection.remotePeer,
+    }
+    const friend = friendsCallback.current.find(
+      (_friend) => _friend.hash === key
+    )
+    if (!friend) return
+    hashMap[key] = Object.assign(hashMap[key], friend)
+
+    greet(connection.remotePeer, friend.topic)
   }
 
   const peerDisconnect = async (evt: CustomEvent<Connection>) => {
@@ -119,22 +130,25 @@ export default (): Libp2pResult => {
     const stream = await libp2p!.dialProtocol(peerId!, topic)
     const val = JSON.stringify({
       type: 'information',
-      hash: libp2p!.peerId.toString(),
+      account_id: accountAddress,
       text,
     })
     pipe([uint8ArrayFromString(val)], stream)
   }
 
-  const greet = async (peer: PeerId, topic: string, val: string) => {
+  const greet = async (peer: PeerId, topic: string) => {
     try {
       const stream = await libp2p!.dialProtocol(peer, [topic])
+      const val = JSON.stringify({
+        type: 'greet',
+        account_id: accountAddress,
+      })
       await pipe([uint8ArrayFromString(val)], stream)
-      const key = peer.toString()
-      updateFriends(hashMap[key])
+      console.log(`greet: ${peer.toString()}`)
     } catch (error) {
-      console.log(`fail: ${peer}`)
+      console.log(`greet-fail: ${peer.toString()}`)
       setTimeout(() => {
-        greet(peer, topic, val)
+        greet(peer, topic)
       }, 60 * 1000)
     }
   }

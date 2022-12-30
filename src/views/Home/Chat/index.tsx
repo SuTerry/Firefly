@@ -32,7 +32,7 @@ export default ({ friend, send }: ChatProps): JSX.Element => {
     if (remotes.length > 0) {
       const _remotes = [...remotes]
       const index = _remotes.findIndex(
-        (_remote) => _remote.hash === friend.hash
+        (_remote) => _remote.account_id === friend.account_id
       )
       if (index < 0) return
       const _remote = _remotes[index]
@@ -51,8 +51,8 @@ export default ({ friend, send }: ChatProps): JSX.Element => {
       }}
     >
       <Talk />
-      {/* {friend.peerId ? ( */}
-      {friend.name ? (
+      {friend.peerId ? (
+      // {friend.name ? (
         <Operate send={send} self={self} friend={friend} />
       ) : (
         <Box sx={{ height: 240 }}>

@@ -11,7 +11,7 @@ export interface Friends {
 }
 
 interface Remote {
-  hash: string
+  account_id: string
   text: string
 }
 
