@@ -12,6 +12,7 @@ import App from './App'
 import '@css/main.less'
 
 const root = createRoot(document.getElementById('root') as Element)
+
 const persistor = persistStore(store)
 
 window.addEventListener('load', () => {
