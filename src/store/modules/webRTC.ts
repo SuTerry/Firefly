@@ -63,7 +63,7 @@ export const creatOffer = createAsyncThunk(
     await pc.setLocalDescription(offer)
     await new Promise((resolve) => {
       pc.onicecandidate = (event) => {
-        if (event.candidate) resolve(pc.localDescription)
+        if (event.candidate) setTimeout(() => resolve(pc.localDescription), 10000)
       }
     })
     return {
@@ -105,7 +105,7 @@ export const creatAnswer = createAsyncThunk(
     await pc.setLocalDescription(answer)
     await new Promise((resolve) => {
       pc.onicecandidate = (event) => {
-        if (event.candidate) resolve(pc.localDescription)
+        if (event.candidate) setTimeout(() => resolve(pc.localDescription), 10000)
       }
     })
     return { isUse, isAnswer, joinTime, localStream, pc, friend, media }
