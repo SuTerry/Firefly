@@ -5,7 +5,14 @@ import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 
 import { useAppSelector, useAppDispatch } from '@store/index'
-import { setFriends, setRemotes } from '@store/modules/friends'
+import { setFriends, pushRemotes } from '@store/modules/friends'
+import {
+  creatAnswer,
+  setAnswerChannel,
+  setOfferRemote,
+} from '@store/modules/webRTC'
+
+import { INFORMATION, GREET, OFFER, ANSWER } from '@constants/libp2p'
 
 import type { PeerId } from '@libp2p/interface-peer-id'
 import type { PeerInfo } from '@libp2p/interface-peer-info'
@@ -22,9 +29,10 @@ interface Libp2pResult {
 const hashMap: Record<string, Friends> = {}
 
 export default (): Libp2pResult => {
-  const { friends, remotes } = useAppSelector((state) => state.friends)
+  const { friends } = useAppSelector((state) => state.friends)
   const { libp2p } = useAppSelector((state) => state.user)
   const { accountAddress } = useAppSelector((state) => state.wallet)
+  const { webRTC } = useAppSelector((state) => state)
 
   const dispatch = useAppDispatch()
 
@@ -42,7 +50,7 @@ export default (): Libp2pResult => {
         )
         if (!friend) return
         switch (action.type) {
-          case 'greet':
+          case GREET:
             if (friend.peerId) return
             if (!hashMap[key].account_id) {
               const { peerId } = hashMap[key]
@@ -52,13 +60,25 @@ export default (): Libp2pResult => {
             console.log(`connected: ${friend.name}, peer: ${key}`)
             updateFriends(hashMap[key])
             break
-          case 'information':
-            const _remotes = [...remotes]
-            _remotes.push({
-              account_id: friend.account_id,
-              text: action.text,
-            })
-            dispatch(setRemotes(_remotes))
+          case INFORMATION:
+            dispatch(
+              pushRemotes({
+                account_id: friend.account_id,
+                text: action.text,
+              })
+            )
+            break
+          case OFFER:
+            console.log('111111')
+
+            const { media, offer } = action
+            console.log('22222222')
+
+            dispatch(creatAnswer({ friend, media, offer }))
+            break
+          case ANSWER:
+            const { answer } = action
+            dispatch(setOfferRemote(answer))
             break
           default:
             break
@@ -131,21 +151,15 @@ export default (): Libp2pResult => {
   }
 
   const send: Send = async (text, friend) => {
-    const { peerId, topic } = friend
-    const stream = await libp2p!.dialProtocol(peerId!, topic)
-    const val = JSON.stringify({
-      type: 'information',
-      account_id: accountAddress,
-      text,
-    })
-    pipe([uint8ArrayFromString(val)], stream)
+    const data = { text }
+    privateSend(INFORMATION, friend, data)
   }
 
   const greet = async (peer: PeerId, topic: string) => {
     try {
       const stream = await libp2p!.dialProtocol(peer, [topic])
       const val = JSON.stringify({
-        type: 'greet',
+        type: GREET,
         account_id: accountAddress,
       })
       await pipe([uint8ArrayFromString(val)], stream)
@@ -167,20 +181,61 @@ export default (): Libp2pResult => {
     dispatch(setFriends(_friends))
   }
 
+  const privateSend = async (
+    type: string,
+    friend: Friends,
+    data: Record<string, unknown> = {}
+  ) => {
+    const { peerId, topic } = friend
+    const stream = await libp2p!.dialProtocol(peerId!, topic)
+    const val = JSON.stringify({
+      type,
+      account_id: accountAddress,
+      ...data,
+    })
+    pipe([uint8ArrayFromString(val)], stream)
+  }
+
   useEffect(() => {
     console.log(`libp2pPeerId:${libp2p!.peerId.toString()}`)
     init()
+    return () => {
+      libp2p?.stop()
+    }
   }, [])
 
   useEffect(() => {
     friendsCallback.current = friends
-  })
-
-  useEffect(() => {
     const topices = friends.map((friend) => friend.topic)
     libp2p?.unhandle(topices)
     libp2p?.handle(topices, handle)
   }, [friends])
+
+  useEffect(() => {
+    if (webRTC.isOffer) {
+      privateSend(OFFER, webRTC.friend!, {
+        offer: webRTC.pc?.localDescription,
+        media: webRTC.media,
+      })
+    } else {
+      //
+    }
+  }, [webRTC.isOffer])
+
+  useEffect(() => {
+    console.log('webRTC.isAnswer')
+
+    if (webRTC.isAnswer) {
+      privateSend(ANSWER, webRTC.friend!, {
+        answer: webRTC.pc?.localDescription,
+      })
+      webRTC.pc!.ondatachannel = (event) => {
+        if (!webRTC.dataChannel) dispatch(setAnswerChannel(event.channel))
+      }
+    } else {
+      //
+    }
+  }, [webRTC.isAnswer])
 
   return { send }
 }

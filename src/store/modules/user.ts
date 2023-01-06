@@ -11,6 +11,8 @@ interface User {
   isCW: boolean
   libp2p: Libp2p | null
   dialogOpen: boolean
+  isVideo: boolean
+  isAudio: boolean
 }
 
 interface SerUser {
@@ -25,6 +27,8 @@ const initialState: User = {
   isCW: false,
   libp2p: null,
   dialogOpen: false,
+  isVideo: false,
+  isAudio: false,
 }
 const user = createSlice({
   name: 'user',
@@ -39,6 +43,9 @@ const user = createSlice({
     login(state, { payload }: PayloadAction<SerUser>) {
       state = Object.assign(state, payload, { isLogin: true })
     },
+    setAudio(state, { payload }: PayloadAction<boolean>) {
+      state = Object.assign(state, { isAudio: payload })
+    },
   },
   extraReducers(builder) {
     builder.addCase(initWallet.fulfilled, (state, { payload: { libp2p } }) => {
@@ -52,14 +59,11 @@ const user = createSlice({
         if (libp2p) state = Object.assign(state, { libp2p, isCW: true })
       }
     )
-    builder.addCase(
-      disconnectWallet,
-      (state) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        state = Object.assign(state, initialState)
-      }
-    )
+    builder.addCase(disconnectWallet, (state) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      state = Object.assign(state, initialState)
+    })
   },
 })
-export const { setUser, setDialogOpen, login } = user.actions
+export const { setUser, setDialogOpen, login, setAudio } = user.actions
 export default user.reducer

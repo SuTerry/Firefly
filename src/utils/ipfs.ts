@@ -37,6 +37,8 @@ export const cat = async <T>(cids: string[]): Promise<T[]> => {
   return await Promise.all(examJson)
 }
 
+export const path = (hash: string): string => `https://ipfs.io/ipfs/${hash}`
+
 const utf8ArrayToStr = (array: Uint8Array): string => {
   const len = array.length
   let out, i, c, char2, char3

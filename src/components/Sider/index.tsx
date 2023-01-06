@@ -13,6 +13,8 @@ import { setCurrentFriendIndex } from '@store/modules/friends'
 
 import { userApi, ContractError } from '@api/index'
 
+import { path } from '@utils/ipfs'
+
 import AddBoxIcon from '@mui/icons-material/AddBox'
 import LinkOffIcon from '@mui/icons-material/LinkOff'
 
@@ -105,7 +107,13 @@ export default (): JSX.Element => {
             return (
               <Tab
                 key={friend.hash}
+                icon={<img style={{width: '30px'}} src={path(friend.image)} />}
+                iconPosition="start"
                 label={friend.name}
+                sx={{
+                  pl: 3,
+                  justifyContent: 'left'
+                }}
                 {...{
                   id: `vertical-tab-${index}`,
                   'aria-controls': `vertical-tabpanel-${index}`,

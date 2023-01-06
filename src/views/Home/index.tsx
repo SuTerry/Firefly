@@ -24,9 +24,6 @@ export default (): JSX.Element => {
           id={`vertical-tabpanel-${index}`}
           aria-labelledby={`vertical-tab-${index}`}
           key={friend.account_id}
-          // style={{
-          //   visibility: currentFriendIndex === index ? 'visible' : 'hidden',
-          // }}
         >
           {currentFriendIndex === index && <Chat friend={friend} send={send} />}
         </div>

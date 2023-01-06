@@ -10,6 +10,7 @@ import local from './modules/local'
 import router from './modules/router'
 import friends from './modules/friends'
 import user from './modules/user'
+import webRTC from './modules/webRTC'
 
 const reducers = combineReducers({
   wallet,
@@ -17,12 +18,13 @@ const reducers = combineReducers({
   router,
   friends,
   user,
+  webRTC,
 })
 
 const persistConfig = {
   key: 'Firefly',
   storage,
-  blacklist: ['router', 'friends', 'user'],
+  blacklist: ['router', 'friends', 'user', 'webRTC'],
 }
 
 const persistedReducer = persistReducer(persistConfig, reducers)

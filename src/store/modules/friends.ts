@@ -37,7 +37,15 @@ const friends = createSlice({
     setRemotes(state, { payload }: PayloadAction<Remote[]>) {
       state.remotes = [...payload]
     },
+    pushRemotes(state, { payload }: PayloadAction<Remote>) {
+      state.remotes.push(payload)
+    },
   },
 })
-export const { setFriends, setCurrentFriendIndex, setRemotes } = friends.actions
+export const {
+  setFriends,
+  setCurrentFriendIndex,
+  setRemotes,
+  pushRemotes,
+} = friends.actions
 export default friends.reducer

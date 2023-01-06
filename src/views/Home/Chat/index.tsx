@@ -1,13 +1,11 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 
 import { Box, Divider, Typography } from '@mui/material'
-
-import { useAppSelector, useAppDispatch } from '@store/index'
-import { Friends, setRemotes } from '@store/modules/friends'
 
 import langHook from '@hooks/localHook'
 import { chatLang } from '@langs/index'
 
+import type { Friends } from '@store/modules/friends'
 import type { Send } from '../libp2pHook'
 
 import talk from './Talk'
@@ -19,28 +17,9 @@ interface ChatProps {
 }
 
 export default ({ friend, send }: ChatProps): JSX.Element => {
-
-  const { remotes } = useAppSelector((store) => store.friends)
-
-  const dispatch = useAppDispatch()
-
   const local = langHook()
 
-  const { Talk, self, remote } = talk({ account_id: friend.account_id })
-
-  useEffect(() => {
-    if (remotes.length > 0) {
-      const _remotes = [...remotes]
-      const index = _remotes.findIndex(
-        (_remote) => _remote.account_id === friend.account_id
-      )
-      if (index < 0) return
-      const _remote = _remotes[index]
-      remote(_remote.text)
-      _remotes.splice(index, 1)
-      dispatch(setRemotes(_remotes))
-    }
-  }, [remotes])
+  const { Talk, self } = talk(friend)
 
   return (
     <Box
