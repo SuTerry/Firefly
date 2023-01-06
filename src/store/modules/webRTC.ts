@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import type { Friends } from './friends'
 
+import { RootState } from '..'
 export interface Audio {
   isUse: boolean
   joinTime: number
@@ -12,6 +13,7 @@ export interface Audio {
   isAnswer: boolean
   media: MediaStreamConstraints | undefined
   dataChannel: RTCDataChannel | undefined
+  stream: MediaStream | undefined
 }
 
 interface CreateOfferParams {
@@ -36,6 +38,7 @@ const initialState: Audio = {
   isAnswer: false,
   media: undefined,
   dataChannel: undefined,
+  stream: undefined,
 }
 
 export const creatOffer = createAsyncThunk(
@@ -63,7 +66,8 @@ export const creatOffer = createAsyncThunk(
     await pc.setLocalDescription(offer)
     await new Promise((resolve) => {
       pc.onicecandidate = (event) => {
-        if (event.candidate) setTimeout(() => resolve(pc.localDescription), 10000)
+        if (event.candidate)
+          setTimeout(() => resolve(pc.localDescription), 10000)
       }
     })
     return {
@@ -99,16 +103,43 @@ export const creatAnswer = createAsyncThunk(
         },
       ],
     })
+    let stream: MediaStream | undefined
+
     localStream.getTracks().forEach((track) => pc.addTrack(track, localStream))
+    
+
+    pc.ontrack = (event) => {
+      stream = event.streams[0]
+    }
     await pc.setRemoteDescription(offer)
     const answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
     await new Promise((resolve) => {
       pc.onicecandidate = (event) => {
-        if (event.candidate) setTimeout(() => resolve(pc.localDescription), 10000)
+        if (event.candidate)
+          setTimeout(() => resolve(pc.localDescription), 10000)
       }
     })
-    return { isUse, isAnswer, joinTime, localStream, pc, friend, media }
+    return { isUse, isAnswer, joinTime, localStream, pc, friend, media, stream }
+  }
+)
+
+export const setOfferRemote = createAsyncThunk(
+  'weRTC/setOfferRemote',
+  async (answer: RTCSessionDescription, { getState }) => {
+    const { pc } = (getState() as RootState).webRTC
+
+    let stream: MediaStream | undefined
+
+    pc!.ontrack = (event) => {
+      stream = event.streams[0]
+    }
+
+    if (!pc!.currentRemoteDescription) {
+      await pc!.setRemoteDescription(answer)
+    }
+    
+    return { pc, stream }
   }
 )
 
@@ -117,14 +148,7 @@ const weRTC = createSlice({
   initialState,
   reducers: {
     setAnswerChannel(state, { payload }: PayloadAction<RTCDataChannel>) {
-      state = Object.assign(state, payload)
-    },
-    setOfferRemote(state, { payload }: PayloadAction<RTCSessionDescription>) {
-      const { pc } = state
-      if (!pc!.currentRemoteDescription) {
-        pc!.setRemoteDescription(payload)
-      }
-      state = Object.assign(state, { pc })
+      state = Object.assign(state, { dataChannel: payload })
     },
   },
   extraReducers(builder) {
@@ -134,8 +158,11 @@ const weRTC = createSlice({
     builder.addCase(creatAnswer.fulfilled, (state, { payload }) => {
       state = Object.assign(state, payload)
     })
+    builder.addCase(setOfferRemote.fulfilled, (state, { payload }) => {
+      state = Object.assign(state, payload)
+    })
   },
 })
 
-export const { setAnswerChannel, setOfferRemote } = weRTC.actions
+export const { setAnswerChannel } = weRTC.actions
 export default weRTC.reducer

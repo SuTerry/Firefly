@@ -69,11 +69,7 @@ export default (): Libp2pResult => {
             )
             break
           case OFFER:
-            console.log('111111')
-
             const { media, offer } = action
-            console.log('22222222')
-
             dispatch(creatAnswer({ friend, media, offer }))
             break
           case ANSWER:
@@ -223,8 +219,6 @@ export default (): Libp2pResult => {
   }, [webRTC.isOffer])
 
   useEffect(() => {
-    console.log('webRTC.isAnswer')
-
     if (webRTC.isAnswer) {
       privateSend(ANSWER, webRTC.friend!, {
         answer: webRTC.pc?.localDescription,

@@ -19,7 +19,7 @@ interface Operate {
 }
 
 export default ({ send, self, friend }: Operate): JSX.Element => {
-  const { isUse, media, pc } = useAppSelector((store) => store.webRTC)
+  const { isUse, media, stream } = useAppSelector((store) => store.webRTC)
 
   const dispatch = useAppDispatch()
 
@@ -46,12 +46,10 @@ export default ({ send, self, friend }: Operate): JSX.Element => {
   }
 
   useEffect(() => {
-    if (!pc) return
+    if (!stream) return
     if (!streamRef.current) return
-    pc.ontrack = (event) => {
-      streamRef.current!.srcObject = event.streams[0]
-    }
-  }, [pc, streamRef])
+    streamRef.current!.srcObject = stream
+  }, [stream, streamRef.current])
 
   return (
     <Box sx={{ height: 240 }}>
