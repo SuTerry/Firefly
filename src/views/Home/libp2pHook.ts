@@ -7,18 +7,21 @@ import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import { useAppSelector, useAppDispatch } from '@store/index'
 import { setFriends, pushRemotes } from '@store/modules/friends'
 import {
-  creatAnswer,
+  setOfferRequest,
   setAnswerChannel,
   setOfferRemote,
+  initWebRTCState,
+  WebRTC,
 } from '@store/modules/webRTC'
 
-import { INFORMATION, GREET, OFFER, ANSWER } from '@constants/libp2p'
+import { INFORMATION, GREET, OFFER, ANSWER, OUT } from '@constants/libp2p'
 
 import type { PeerId } from '@libp2p/interface-peer-id'
 import type { PeerInfo } from '@libp2p/interface-peer-info'
 import type { Connection } from '@libp2p/interface-connection'
 import type { IncomingStreamData } from '@libp2p/interface-registrar'
 import type { Friends } from '@store/modules/friends'
+import { useSnackbar } from 'notistack'
 
 export type Send = (data: string, firend: Friends) => void
 
@@ -29,14 +32,19 @@ interface Libp2pResult {
 const hashMap: Record<string, Friends> = {}
 
 export default (): Libp2pResult => {
+  const { enqueueSnackbar } = useSnackbar()
+
   const { friends } = useAppSelector((state) => state.friends)
   const { libp2p } = useAppSelector((state) => state.user)
   const { accountAddress } = useAppSelector((state) => state.wallet)
   const { webRTC } = useAppSelector((state) => state)
+  const { stream } = useAppSelector((state) => state.dialog)
 
   const dispatch = useAppDispatch()
 
   const friendsCallback = useRef<Friends[]>([])
+  const webRTCCallback = useRef<WebRTC>(webRTC)
+  const streamCallback = useRef<boolean>(stream)
 
   const handle = async ({ connection, stream }: IncomingStreamData) => {
     const key = connection.remotePeer.toString()
@@ -70,11 +78,22 @@ export default (): Libp2pResult => {
             break
           case OFFER:
             const { media, offer } = action
-            dispatch(creatAnswer({ friend, media, offer }))
+            if (webRTCCallback.current.isUse) {
+              privateSend(OUT, friend)
+            } else {
+              dispatch(setOfferRequest({ friend, media, offer }))
+            }
             break
           case ANSWER:
             const { answer } = action
             dispatch(setOfferRemote(answer))
+            break
+          case OUT:
+            if (!streamCallback.current) return
+            dispatch(initWebRTCState())
+            enqueueSnackbar(`${friend.name} reject`, {
+              variant: 'warning',
+            })
             break
           default:
             break
@@ -208,28 +227,32 @@ export default (): Libp2pResult => {
   }, [friends])
 
   useEffect(() => {
-    if (webRTC.isOffer) {
-      privateSend(OFFER, webRTC.friend!, {
-        offer: webRTC.pc?.localDescription,
-        media: webRTC.media,
-      })
-    } else {
-      //
+    if (webRTC.pc && webRTC.friend) {
+      if (webRTC.isOffer) {
+        privateSend(OFFER, webRTC.friend, {
+          offer: webRTC.pc?.localDescription,
+          media: webRTC.media,
+        })
+      } else {
+        privateSend(ANSWER, webRTC.friend, {
+          answer: webRTC.pc?.localDescription,
+        })
+        webRTC.pc!.ondatachannel = (event) => {
+          if (!webRTC.dataChannel) dispatch(setAnswerChannel(event.channel))
+        }
+      }
+    } else if (webRTC.friend && webRTC.offer && !webRTC.media) {
+      privateSend(OUT, webRTC.friend)
     }
-  }, [webRTC.isOffer])
+  }, [webRTC.pc, webRTC.friend, webRTC.media])
 
   useEffect(() => {
-    if (webRTC.isAnswer) {
-      privateSend(ANSWER, webRTC.friend!, {
-        answer: webRTC.pc?.localDescription,
-      })
-      webRTC.pc!.ondatachannel = (event) => {
-        if (!webRTC.dataChannel) dispatch(setAnswerChannel(event.channel))
-      }
-    } else {
-      //
-    }
-  }, [webRTC.isAnswer])
+    webRTCCallback.current = webRTC
+  }, [webRTC])
+  
+  useEffect(() => {
+    streamCallback.current = stream
+  }, [stream])
 
   return { send }
 }

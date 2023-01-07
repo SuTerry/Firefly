@@ -1,4 +1,4 @@
-import React, { useEffect, ReactNode } from 'react'
+import React, { useEffect, lazy, Suspense, ReactNode } from 'react'
 
 import { useLocation, Navigate } from 'react-router-dom'
 
@@ -8,6 +8,7 @@ import { findRouterRule } from '@utils/routes'
 
 import { setRouter } from '@store/modules/router'
 
+const Dialog = lazy(() => import('@components/Dialog'))
 interface IProps {
   children: ReactNode
 }
@@ -49,6 +50,9 @@ export default ({ children }: IProps): JSX.Element => {
       ) : (
         <></>
       )}{' '}
+      <Suspense>
+        <Dialog />
+      </Suspense>
     </>
   )
 }

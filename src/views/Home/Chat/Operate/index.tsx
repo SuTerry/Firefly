@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, KeyboardEvent } from 'react'
+import React, { useState, KeyboardEvent } from 'react'
 
 import { Box, Divider, IconButton, Stack } from '@mui/material'
 
@@ -19,13 +19,11 @@ interface Operate {
 }
 
 export default ({ send, self, friend }: Operate): JSX.Element => {
-  const { isUse, media, stream } = useAppSelector((store) => store.webRTC)
+  const { isUse } = useAppSelector((store) => store.webRTC)
 
   const dispatch = useAppDispatch()
 
   const [text, setText] = useState('')
-
-  const streamRef = useRef<HTMLAudioElement>(null)
 
   const handleEnter = (event: KeyboardEvent) => {
     if (event.which !== 13) return
@@ -37,19 +35,21 @@ export default ({ send, self, friend }: Operate): JSX.Element => {
     setText('')
   }
 
-  const handleAudio = async () => {
-    if (isUse) return
+  const handleAudio = () => {
     const media = { video: false, audio: true }
-    const localStream = await navigator.mediaDevices.getUserMedia(media)
-
-    dispatch(creatOffer({ localStream, friend, media }))
+    creatStream(media)
   }
 
-  useEffect(() => {
-    if (!stream) return
-    if (!streamRef.current) return
-    streamRef.current!.srcObject = stream
-  }, [stream, streamRef.current])
+  const handleVideo = () => {
+    const media = { video: true, audio: true }
+    creatStream(media)
+  }
+
+  const creatStream = async (media: MediaStreamConstraints) => {
+    if (isUse) return
+    const localStream = await navigator.mediaDevices.getUserMedia(media)
+    dispatch(creatOffer({ localStream, friend, media }))
+  }
 
   return (
     <Box sx={{ height: 240 }}>
@@ -63,7 +63,7 @@ export default ({ send, self, friend }: Operate): JSX.Element => {
         <IconButton onClick={handleAudio}>
           <Phone />
         </IconButton>
-        <IconButton>
+        <IconButton onClick={handleVideo}>
           <Videocam />
         </IconButton>
       </Stack>
@@ -73,9 +73,6 @@ export default ({ send, self, friend }: Operate): JSX.Element => {
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleEnter}
       ></textarea>
-      {isUse && !media?.video && (
-        <audio className="audio" ref={streamRef} autoPlay controls></audio>
-      )}
     </Box>
   )
 }
