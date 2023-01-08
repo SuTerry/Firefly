@@ -23,7 +23,7 @@ export const getAccountId = (): string => {
 
 export const onWalletEvent: () => Promise<void> = async () => {
   if (!window.near) return
-  // window.near.on('accountChanged', eventFunction)
+  window.near.on('accountChanged', eventFunction)
   window.near.on('rpcChanged', eventFunction)
   window.near.on('signOut', eventFunction)
 }
