@@ -47,8 +47,7 @@ export default ({ send, self, friend }: Operate): JSX.Element => {
 
   const creatStream = async (media: MediaStreamConstraints) => {
     if (isUse) return
-    const localStream = await navigator.mediaDevices.getUserMedia(media)
-    dispatch(creatOffer({ localStream, friend, media }))
+    dispatch(creatOffer({ friend, media }))
   }
 
   return (

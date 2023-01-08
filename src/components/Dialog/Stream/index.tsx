@@ -43,7 +43,8 @@ export default (): JSX.Element => {
 
   const dispatch = useAppDispatch()
 
-  const streamRef = useRef<HTMLVideoElement>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   const handleAnswer = () => {
     dispatch(creatAnswer())
@@ -63,17 +64,21 @@ export default (): JSX.Element => {
         src={path(friend.image)}
       />
       <Typography>{friend.name}</Typography>
-      <audio className="audio" ref={streamRef} autoPlay></audio>
+      <audio className="audio" ref={audioRef} autoPlay></audio>
     </>
   )
 
-  const creatVideo = () => <video className="remote_video" ref={streamRef} autoPlay></video>
+  const creatVideo = () => (
+    <video className="remote_video" ref={videoRef} autoPlay></video>
+  )
 
   useEffect(() => {
     if (!stream) return
-    if (!streamRef.current) return
-    streamRef.current!.srcObject = stream
-  }, [stream, streamRef.current])
+    if (pc?.connectionState !== 'connected') return
+    isVideo
+      ? (videoRef.current!.srcObject = stream)
+      : (audioRef.current!.srcObject = stream)
+  }, [stream, pc?.connectionState])
 
   return (
     <div>

@@ -19,7 +19,6 @@ export interface WebRTC {
 }
 
 interface CreateOfferParams {
-  localStream: MediaStream
   friend: Friends
   media: MediaStreamConstraints
 }
@@ -47,7 +46,8 @@ const initialState: WebRTC = {
 
 export const creatOffer = createAsyncThunk(
   'weRTC/creatOffer',
-  async ({ localStream, friend, media }: CreateOfferParams) => {
+  async ({ friend, media }: CreateOfferParams) => {
+    const localStream = await navigator.mediaDevices.getUserMedia(media)
     const pc = new RTCPeerConnection({
       iceServers: [
         {
@@ -85,6 +85,7 @@ export const creatAnswer = createAsyncThunk(
   'weRTC/creatAnswer',
   async (_, { getState }) => {
     const { media, offer } = (getState() as RootState).webRTC
+
     const localStream = await navigator.mediaDevices.getUserMedia(media)
     const pc = new RTCPeerConnection({
       iceServers: [
@@ -114,6 +115,7 @@ export const creatAnswer = createAsyncThunk(
         if (event.candidate) setTimeout(() => resolve(pc.localDescription), 300)
       }
     })
+
     return { localStream, pc, media, stream }
   }
 )
@@ -163,7 +165,6 @@ const webRTC = createSlice({
       state = Object.assign(state, {
         dataChannel: payload,
         pc,
-        connectionState: true,
       })
     },
   },

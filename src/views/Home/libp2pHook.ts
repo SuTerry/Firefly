@@ -38,13 +38,13 @@ export default (): Libp2pResult => {
   const { libp2p } = useAppSelector((state) => state.user)
   const { accountAddress } = useAppSelector((state) => state.wallet)
   const { webRTC } = useAppSelector((state) => state)
-  const { stream } = useAppSelector((state) => state.dialog)
+  const { streamOpen } = useAppSelector((state) => state.dialog)
 
   const dispatch = useAppDispatch()
 
   const friendsCallback = useRef<Friends[]>([])
   const webRTCCallback = useRef<WebRTC>(webRTC)
-  const streamCallback = useRef<boolean>(stream)
+  const streamOpenCallback = useRef<boolean>(streamOpen)
 
   const handle = async ({ connection, stream }: IncomingStreamData) => {
     const key = connection.remotePeer.toString()
@@ -89,7 +89,7 @@ export default (): Libp2pResult => {
             dispatch(setOfferRemote(answer))
             break
           case OUT:
-            if (!streamCallback.current) return
+            if (!streamOpenCallback.current) return
             dispatch(initWebRTCState())
             enqueueSnackbar(`${friend.name} reject`, {
               variant: 'warning',
@@ -237,9 +237,6 @@ export default (): Libp2pResult => {
         privateSend(ANSWER, webRTC.friend, {
           answer: webRTC.pc?.localDescription,
         })
-        webRTC.pc!.ondatachannel = (event) => {
-          if (!webRTC.dataChannel) dispatch(setAnswerChannel(event.channel))
-        }
       }
     } else if (webRTC.friend && webRTC.offer && !webRTC.media) {
       privateSend(OUT, webRTC.friend)
@@ -247,12 +244,19 @@ export default (): Libp2pResult => {
   }, [webRTC.pc, webRTC.friend, webRTC.media])
 
   useEffect(() => {
+    if (!webRTC.pc) return
+    webRTC.pc.ondatachannel = (event) => {
+      if (!webRTC.dataChannel) dispatch(setAnswerChannel(event.channel))
+    }
+  }, [webRTC.pc])
+
+  useEffect(() => {
     webRTCCallback.current = webRTC
   }, [webRTC])
-  
+
   useEffect(() => {
-    streamCallback.current = stream
-  }, [stream])
+    streamOpenCallback.current = streamOpen
+  }, [streamOpen])
 
   return { send }
 }
