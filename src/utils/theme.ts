@@ -1,49 +1,28 @@
-
 import { createTheme } from '@mui/material/styles'
 
-declare module '@mui/material/styles' {
-  interface Palette {
-    navLeft: Palette['primary']
-    navRight: Palette['primary']
-  }
-
-  // allow configuration using `createTheme`
-  interface PaletteOptions {
-    navLeft?: PaletteOptions['primary']
-    navRight?: PaletteOptions['primary']
-  }
-}
-
-// Update the Button's color prop options
-declare module '@mui/material/Button' {
-  interface ButtonPropsColorOverrides {
-    navLeft: true
-    navRight: true
-  }
-}
-
-export type Palette = 'navLeft' | 'navRight'
+// const fontColor = '#fff'
 
 export default createTheme({
   palette: {
     primary: {
       main: '#000000'
+      // main: '#fff',
     },
-    navLeft: {
-      main: '#2e7d32',
-      contrastText: '#fff',
-    },
-    navRight: {
-      main: '#d32f2f',
-      contrastText: '#fff',
-    }
   },
   typography: {
-    fontFamily: [
-      ''
-    ].join(','),
-    body1: {
-      // lineHeight: 2,
-    }
-  }
+    fontFamily: [''].join(','),
+    // body1: {
+    //   color: fontColor,
+    //   // lineHeight: 2,
+    // },
+    // h1: {
+    //   color: fontColor,
+    // },
+    // h2: {
+    //   color: fontColor,
+    // },
+    // h4: {
+    //   color: fontColor,
+    // },
+  },
 })

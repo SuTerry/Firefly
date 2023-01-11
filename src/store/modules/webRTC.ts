@@ -57,8 +57,14 @@ export const creatOffer = createAsyncThunk(
             'stun:stun1.l.google.com:19302',
             'stun:stun2.l.google.com:19302',
             'stun:stun3.l.google.com:19302',
+            'stun:54.250.193.38:3478',
           ],
         },
+        {
+          urls: ['turn:54.250.193.38:3478'],
+          username: 'firefly',
+          credential: 'firefly12345'
+        }
       ],
     })
     const dataChannel = pc.createDataChannel(friend.topic)
@@ -96,7 +102,13 @@ export const creatAnswer = createAsyncThunk(
             'stun:stun1.l.google.com:19302',
             'stun:stun2.l.google.com:19302',
             'stun:stun3.l.google.com:19302',
+            'stun:54.250.193.38:3478',
           ],
+        },
+        {
+          urls: ['turn:54.250.193.38:3478'],
+          username: 'firefly',
+          credential: 'firefly12345',
         },
       ],
     })

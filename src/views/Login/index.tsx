@@ -74,7 +74,7 @@ export default (): JSX.Element => {
         sx={{
           mt: 4,
           fontSize: 14,
-          color: '#333',
+          // color: '#333',
           textTransform: 'none',
         }}
         onClick={() => dispatch(setDialogOpen(true))}

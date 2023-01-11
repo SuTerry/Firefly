@@ -10,6 +10,9 @@ import { setDialogOpen } from '@store/modules/wallet'
 import langHook from '@hooks/localHook'
 import { connectLang, headerLang } from '@langs/index'
 
+import snowflake from '@utils/snowflake'
+
+import './index.less'
 
 export default (): JSX.Element => {
   const navigator = useNavigate()
@@ -23,6 +26,11 @@ export default (): JSX.Element => {
   useEffect(() => {
     if (isCW) navigator('/')
   }, [isCW])
+
+  useEffect(() => {
+    snowflake()
+  }, [])
+
   return (
     <Box
       sx={{
@@ -32,13 +40,29 @@ export default (): JSX.Element => {
         pt: 16,
       }}
     >
-      <Typography sx={{ m: 8 }} variant="h2">
-        Firefly
+      <Typography
+        sx={{
+          m: 8,
+          mb: 5,
+          textShadow: '0px 0px 10px #FFFFFF',
+          fontWeight: 700,
+          fontSize: '5rem',
+        }}
+        variant="h2"
+      >
+        FIREFLY
       </Typography>
-      <Typography variant="h4">{local(connectLang.subTitle)}</Typography>
-      <Button sx={{ width: 180, height: 50, mt: 8 }} variant="outlined" onClick={() => dispatch(setDialogOpen(true))}>
+      <Typography sx={{ fontSize: '1.9rem' }} variant="h4">
+        {local(connectLang.subTitle)}
+      </Typography>
+      <Button
+        sx={{ width: 180, height: 50, mt: 10 }}
+        variant="outlined"
+        onClick={() => dispatch(setDialogOpen(true))}
+      >
         {local(headerLang.wallet)}
       </Button>
+      <canvas className="connect_canvas"></canvas>
     </Box>
   )
 }
