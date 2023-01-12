@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 
-import { Box, Button, TextField, IconButton, Tabs, Tab } from '@mui/material'
+import { Box, Button, IconButton, Tabs, Tab, TabProps } from '@mui/material'
+
+import { styled } from '@mui/material/styles'
 
 import { useSnackbar } from 'notistack'
 
@@ -11,12 +13,18 @@ import { useAppSelector, useAppDispatch } from '@store/index'
 import { disconnectWallet } from '@store/modules/wallet'
 import { setCurrentFriendIndex } from '@store/modules/friends'
 
-import { userApi, ContractError } from '@api/index'
+import { userApi } from '@api/index'
 
 import { path } from '@utils/ipfs'
 
+import { TextField } from '@components/Customization'
+
 import AddBoxIcon from '@mui/icons-material/AddBox'
 import LinkOffIcon from '@mui/icons-material/LinkOff'
+
+const AntTab = styled((props: TabProps) => <Tab {...props} />)(() => ({
+  color: 'rgba(255, 255, 255, 0.85)',
+}))
 
 export default (): JSX.Element => {
   const { enqueueSnackbar } = useSnackbar()
@@ -39,12 +47,7 @@ export default (): JSX.Element => {
       enqueueSnackbar(local(siderLang.successfulRequest), {
         variant: 'success',
       })
-    } catch (error) {
-      enqueueSnackbar((error as ContractError).kind.ExecutionError, {
-        variant: 'error',
-        autoHideDuration: 5000,
-      })
-    }
+    } catch (error) {}
   }
 
   useEffect(() => {
@@ -57,9 +60,9 @@ export default (): JSX.Element => {
         width: 300,
         height: '100vh',
         pt: 2,
-        backgroundColor: '#fff',
+        backgroundColor: '#000',
         boxSizing: 'border-box',
-        borderRight: '1px solid rgba(0, 0, 0, 0.12)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.12)',
         position: 'relative',
       }}
     >
@@ -79,7 +82,7 @@ export default (): JSX.Element => {
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        <IconButton sx={{ ml: 1 }} onClick={handle}>
+        <IconButton color="primary" sx={{ ml: 1 }} onClick={handle}>
           <AddBoxIcon />
         </IconButton>
       </Box>
@@ -88,7 +91,6 @@ export default (): JSX.Element => {
         sx={{
           width: '100%',
           height: 'calc(100vh - 136px)',
-          bgcolor: 'background.paper',
         }}
       >
         <Tabs
@@ -105,14 +107,16 @@ export default (): JSX.Element => {
         >
           {friends.map((friend, index) => {
             return (
-              <Tab
+              <AntTab
                 key={friend.hash}
-                icon={<img style={{width: '30px'}} src={path(friend.image)} />}
+                icon={
+                  <img style={{ width: '30px' }} src={path(friend.image)} />
+                }
                 iconPosition="start"
                 label={friend.name}
                 sx={{
                   pl: 3,
-                  justifyContent: 'left'
+                  justifyContent: 'left',
                 }}
                 {...{
                   id: `vertical-tab-${index}`,
@@ -128,7 +132,7 @@ export default (): JSX.Element => {
         <Box>
           <Button
             size="large"
-            color="inherit"
+            color="primary"
             sx={{ width: '100%', height: 64 }}
             startIcon={<LinkOffIcon />}
             onClick={() => dispatch(disconnectWallet())}

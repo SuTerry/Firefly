@@ -96,6 +96,7 @@ export default ({ account_id, image }: Friends): TalkReturn => {
                   ml: item.type === 'remote' ? 1 : 0,
                   borderRadius: '6px',
                   backgroundColor: item.type === 'self' ? '#fff' : '#1AAD19',
+                  color: '#000'
                 }}
               >
                 {item.text}

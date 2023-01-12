@@ -14,6 +14,8 @@ import { setDialogOpen, login } from '@store/modules/user'
 import langHook from '@hooks/localHook'
 import { loginLang } from '@langs/index'
 
+import snowflake from '@utils/snowflake'
+
 import { userApi, ContractError } from '@api/index'
 
 export default (): JSX.Element => {
@@ -49,38 +51,44 @@ export default (): JSX.Element => {
     if (isLogin) navigator('/')
   }, [isLogin])
 
+  useEffect(() => {
+    snowflake()
+  }, [])
+
   return (
-    <Box
-      sx={{
-        width: '100%',
-        height: 'calc(100vh - 128px)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
-      <Typography>{local(loginLang.title)}</Typography>
-      <LoadingButton
-        sx={{ mt: 6, textTransform: 'none' }}
-        variant="contained"
-        disabled={!libp2p}
-        loading={loading}
-        onClick={handleSubmit}
-      >
-        {local(loginLang.login)}
-      </LoadingButton>
-      <Button
+    <>
+      <Box
         sx={{
-          mt: 4,
-          fontSize: 14,
-          // color: '#333',
-          textTransform: 'none',
+          width: '100%',
+          height: 'calc(100vh - 128px)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
-        onClick={() => dispatch(setDialogOpen(true))}
       >
-        {local(loginLang.unregistered)}
-      </Button>
-    </Box>
+        <Typography variant="h6">{local(loginLang.title)}</Typography>
+        <LoadingButton
+          sx={{ mt: 6, textTransform: 'none', width: 140 }}
+          variant="contained"
+          disabled={!libp2p}
+          loading={loading}
+          onClick={handleSubmit}
+        >
+          {local(loginLang.login)}
+        </LoadingButton>
+        <Button
+          sx={{
+            mt: 2,
+            fontSize: 14,
+            textTransform: 'none',
+          }}
+          onClick={() => dispatch(setDialogOpen(true))}
+        >
+          {local(loginLang.unregistered)}
+        </Button>
+      </Box>
+      <canvas className="particle_canvas"></canvas>
+    </>
   )
 }

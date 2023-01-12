@@ -37,14 +37,21 @@ const Transition = React.forwardRef(
 
 export default (): JSX.Element => {
   const { streamOpen } = useAppSelector((store) => store.dialog)
-  const { friend, pc, isOffer, isAnswer, stream, isVideo } = useAppSelector(
-    (store) => store.webRTC
-  )
+  const {
+    friend,
+    pc,
+    isOffer,
+    isAnswer,
+    stream,
+    isVideo,
+    localStream,
+  } = useAppSelector((store) => store.webRTC)
 
   const dispatch = useAppDispatch()
 
   const audioRef = useRef<HTMLAudioElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const videoLocalRef = useRef<HTMLVideoElement>(null)
 
   const handleAnswer = () => {
     dispatch(creatAnswer())
@@ -63,21 +70,32 @@ export default (): JSX.Element => {
         style={{ width: '100px', marginBottom: '16px' }}
         src={path(friend.image)}
       />
-      <Typography>{friend.name}</Typography>
+      <Typography sx={{ color: '#000' }}>{friend.name}</Typography>
       <audio className="audio" ref={audioRef} autoPlay></audio>
     </>
   )
 
   const creatVideo = () => (
-    <video className="remote_video" ref={videoRef} autoPlay></video>
+    <Box sx={{ width: '100%', position: 'relative' }}>
+      <video
+        className="local_video"
+        ref={videoLocalRef}
+        autoPlay
+        muted={true}
+      ></video>
+      <video className="remote_video" ref={videoRef} autoPlay></video>
+    </Box>
   )
 
   useEffect(() => {
     if (!stream) return
     if (pc?.connectionState !== 'connected') return
-    isVideo
-      ? (videoRef.current!.srcObject = stream)
-      : (audioRef.current!.srcObject = stream)
+    if (isVideo) {
+      videoRef.current!.srcObject = stream
+      videoLocalRef.current!.srcObject = localStream!
+    } else {
+      audioRef.current!.srcObject = stream
+    }
   }, [stream, pc?.connectionState])
 
   return (
@@ -86,8 +104,8 @@ export default (): JSX.Element => {
         <DialogContent>
           <Box
             sx={{
-              width: 280,
-              height: 340,
+              width: 552,
+              height: 400,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
@@ -118,7 +136,7 @@ export default (): JSX.Element => {
                 />
               </>
             )}
-            {!connected && <CircularProgress sx={{ mt: 6 }} />}
+            {!connected && <CircularProgress color="inherit" sx={{ mt: 6 }} />}
           </Box>
         </DialogContent>
         <DialogActions

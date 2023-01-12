@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from 'react'
+import React, { useState } from 'react'
 
 import {
   Box,
@@ -23,9 +23,6 @@ import { setLocal } from '@store/modules/local'
 import { setDialogOpen } from '@store/modules/wallet'
 import { setDialogOpen as registerOpen } from '@store/modules/user'
 
-const WallteDialog = lazy(() => import('@components/WallteDialog'))
-const RegisterDialog = lazy(() => import('../RegisterDialog'))
-
 export default (): JSX.Element => {
   const { headerImg, nickname, isCW, isLogin } = useAppSelector(
     (state) => state.user
@@ -46,13 +43,13 @@ export default (): JSX.Element => {
   return (
     <Box>
       {/* AppBar */}
-      <AppBar position="static">
+      <AppBar color="transparent" position="static">
         <Toolbar>
-          <Box sx={{ flexGrow: 1 }}>{currentFriend?.name}</Box>
+          <Box sx={{ flexGrow: 1, color: '#fff' }}>{isLogin && currentFriend?.name}</Box>
           <IconButton
             size="large"
             edge="start"
-            color="inherit"
+            color="primary"
             aria-label="menu"
             sx={{ mr: 2 }}
             onClick={(event) => setAnchorEl(event.currentTarget)}
@@ -64,17 +61,23 @@ export default (): JSX.Element => {
             open={!!anchorEl}
             onClose={() => setAnchorEl(null)}
           >
-            <MenuItem onClick={() => handleLocal(LOCAL.zh_cn)}>
+            <MenuItem
+              sx={{ color: '#000' }}
+              onClick={() => handleLocal(LOCAL.zh_cn)}
+            >
               简体中文
             </MenuItem>
-            <MenuItem onClick={() => handleLocal(LOCAL.en_us)}>
+            <MenuItem
+              sx={{ color: '#000' }}
+              onClick={() => handleLocal(LOCAL.en_us)}
+            >
               English
             </MenuItem>
           </Menu>
           {isCW ? (
             isLogin ? (
               <Button
-                color="inherit"
+                color="primary"
                 sx={{ textTransform: 'none' }}
                 startIcon={
                   <img
@@ -91,7 +94,7 @@ export default (): JSX.Element => {
             )
           ) : (
             <Button
-              color="inherit"
+              color="primary"
               onClick={() => dispatch(setDialogOpen(true))}
             >
               {local(headerLang.wallet)}
@@ -99,8 +102,6 @@ export default (): JSX.Element => {
           )}
         </Toolbar>
       </AppBar>
-
-      <Suspense>{isCW ? <RegisterDialog /> : <WallteDialog />}</Suspense>
     </Box>
   )
 }

@@ -31,12 +31,14 @@ export default ({ friend, send }: ChatProps): JSX.Element => {
     >
       <Talk />
       {friend.peerId ? (
-      // {friend.name ? (
+        // {friend.name ? (
         <Operate send={send} self={self} friend={friend} />
       ) : (
         <Box sx={{ height: 240 }}>
           <Divider />
-          <Typography sx={{ lineHeight: '239px', textAlign: 'center' }}>
+          <Typography
+            sx={{ lineHeight: '239px', textAlign: 'center', color: '#000' }}
+          >
             {local(chatLang.notConnect) + friend.name}
           </Typography>
         </Box>

@@ -1,1 +1,0 @@
-{"version":3,"file":"css/src_components_Dialog_index_tsx.9f03d69c.css","mappings":"AAAA,OAEE,aADA,cAEF,CAEA,cACE,WAAF","sources":["webpack://sourcedao-pc-dapp/./src/components/Dialog/Stream/index.less"],"sourcesContent":[".audio {\n  position: fixed;\n  left: -1000px;\n}\n\n.remote_video {\n  width: 328px;\n}"],"names":[],"sourceRoot":""}

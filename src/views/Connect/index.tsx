@@ -12,8 +12,6 @@ import { connectLang, headerLang } from '@langs/index'
 
 import snowflake from '@utils/snowflake'
 
-import './index.less'
-
 export default (): JSX.Element => {
   const navigator = useNavigate()
 
@@ -62,7 +60,7 @@ export default (): JSX.Element => {
       >
         {local(headerLang.wallet)}
       </Button>
-      <canvas className="connect_canvas"></canvas>
+      <canvas className="particle_canvas"></canvas>
     </Box>
   )
 }

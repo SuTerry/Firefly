@@ -1,1 +1,0 @@
-{"version":3,"file":"css/src_views_Connect_index_tsx.64c45b80.css","mappings":"AAAA,gBAGE,OAEA,oBAJA,eACA,MAEA,SAEF","sources":["webpack://sourcedao-pc-dapp/./src/views/Connect/index.less"],"sourcesContent":[".connect_canvas {\n  position: fixed;\n  top: 0;\n  left: 0;\n  z-index: 9;\n  pointer-events: none;\n}"],"names":[],"sourceRoot":""}
