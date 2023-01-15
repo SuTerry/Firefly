@@ -8,7 +8,7 @@ import { useAppSelector } from '@store/index'
 import Chat from './Chat'
 
 export default (): JSX.Element => {
-  const { send } = libp2pHook()
+  libp2pHook()
   friendsHook()
 
   const { friends, currentFriendIndex } = useAppSelector(
@@ -26,7 +26,7 @@ export default (): JSX.Element => {
           key={friend.account_id}
           style={{backgroundColor: '#f0f0f0'}}
         >
-          {currentFriendIndex === index && <Chat friend={friend} send={send} />}
+          {currentFriendIndex === index && <Chat friend={friend} />}
         </div>
       ))}
     </>

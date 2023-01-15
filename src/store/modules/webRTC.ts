@@ -16,17 +16,20 @@ export interface WebRTC {
   stream: MediaStream | undefined
   offer: RTCSessionDescription | undefined
   isVideo: boolean
+  isMeta: boolean
 }
 
 interface CreateOfferParams {
   friend: Friends
   media: MediaStreamConstraints
+  isMeta: boolean
 }
 
 interface OfferRequestParams {
   friend: Friends
   media: MediaStreamConstraints
   offer: RTCSessionDescription
+  isMeta: boolean
 }
 
 const initialState: WebRTC = {
@@ -42,11 +45,12 @@ const initialState: WebRTC = {
   stream: undefined,
   offer: undefined,
   isVideo: false,
+  isMeta: false,
 }
 
 export const creatOffer = createAsyncThunk(
   'weRTC/creatOffer',
-  async ({ friend, media }: CreateOfferParams) => {
+  async ({ friend, media, isMeta }: CreateOfferParams) => {
     const localStream = await navigator.mediaDevices.getUserMedia(media)
     const pc = new RTCPeerConnection({
       iceServers: [
@@ -73,7 +77,7 @@ export const creatOffer = createAsyncThunk(
     await pc.setLocalDescription(offer)
     await new Promise((resolve) => {
       pc.onicecandidate = (event) => {
-        if (event.candidate) setTimeout(() => resolve(pc.localDescription), 300)
+        if (event.candidate) setTimeout(() => resolve(pc.localDescription), 1000)
       }
     })
     return {
@@ -83,6 +87,7 @@ export const creatOffer = createAsyncThunk(
       media,
       dataChannel,
       isVideo: media.video,
+      isMeta,
     }
   }
 )
@@ -124,7 +129,7 @@ export const creatAnswer = createAsyncThunk(
     await pc.setLocalDescription(answer)
     await new Promise((resolve) => {
       pc.onicecandidate = (event) => {
-        if (event.candidate) setTimeout(() => resolve(pc.localDescription), 300)
+        if (event.candidate) setTimeout(() => resolve(pc.localDescription), 1000)
       }
     })
 
@@ -147,7 +152,7 @@ export const setOfferRemote = createAsyncThunk(
       await pc!.setRemoteDescription(answer)
     }
 
-    await new Promise((resolve) => setTimeout(() => resolve(1), 300))
+    await new Promise((resolve) => setTimeout(() => resolve(1), 1000))
 
     return { pc, stream }
   }
@@ -156,7 +161,7 @@ export const setOfferRemote = createAsyncThunk(
 export const initWebRTCState = createAsyncThunk(
   'weRTC/initWebRTCState',
   async () => {
-    await new Promise((resolve) => setTimeout(() => resolve(1), 300))
+    await new Promise((resolve) => setTimeout(() => resolve(1), 1000))
 
     return {}
   }
@@ -170,6 +175,7 @@ const webRTC = createSlice({
       state = Object.assign(state, payload, {
         isUse: true,
         isVideo: payload.media.video,
+        isMeta: payload.isMeta
       })
     },
     setAnswerChannel(state, { payload }: PayloadAction<RTCDataChannel>) {

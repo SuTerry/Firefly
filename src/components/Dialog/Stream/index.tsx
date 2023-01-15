@@ -14,6 +14,7 @@ import {
 
 import { useAppSelector, useAppDispatch } from '@store/index'
 import { initWebRTCState, creatAnswer } from '@store/modules/webRTC'
+import { setMeta } from '@store/modules/dialog'
 
 import { path } from '@utils/ipfs'
 
@@ -45,6 +46,7 @@ export default (): JSX.Element => {
     stream,
     isVideo,
     localStream,
+    isMeta,
   } = useAppSelector((store) => store.webRTC)
 
   const dispatch = useAppDispatch()
@@ -98,6 +100,10 @@ export default (): JSX.Element => {
     }
   }, [stream, pc?.connectionState])
 
+  useEffect(() => {
+    if (isMeta && isUse) dispatch(setMeta(true))
+  }, [isUse, isMeta])
+
   return (
     <div>
       <Dialog open={streamOpen} TransitionComponent={Transition} keepMounted>
@@ -110,6 +116,7 @@ export default (): JSX.Element => {
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
+              overflow: 'hidden',
             }}
           >
             {friend ? (

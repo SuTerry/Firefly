@@ -12,4 +12,5 @@ module.exports = {
   '@hooks': path.resolve(__dirname, '../../src/hooks'), 
   '@langs': path.resolve(__dirname, '../../src/langs'), 
   '@store': path.resolve(__dirname, '../../src/store'), 
+  '@static': path.resolve(__dirname, '../../src/static'), 
 }

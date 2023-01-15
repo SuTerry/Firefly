@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import reactRefresh from '@vitejs/plugin-react-refresh'
 import inject from '@rollup/plugin-inject'
+import copy from 'rollup-plugin-copy'
 const path = require('path')
 const alias = require('./config/alias')
 const extensions = require('./config/extensions')
@@ -14,7 +15,13 @@ export default defineConfig({
   define: {
     global: 'globalThis',
   },
-  plugins: [inject({ Buffer: ['buffer', 'Buffer'] }), reactRefresh()],
+  plugins: [
+    inject({ Buffer: ['buffer', 'Buffer'] }),
+    reactRefresh(),
+    copy({
+      targets: [{ src: '../static', dest: '../static' }],
+    }),
+  ],
   root: path.resolve(__dirname, '../src'),
   server: {
     open: true,

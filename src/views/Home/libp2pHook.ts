@@ -5,7 +5,7 @@ import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 
 import { useAppSelector, useAppDispatch } from '@store/index'
-import { setFriends, pushRemotes } from '@store/modules/friends'
+import { setFriends, pushRemotes, setPosition } from '@store/modules/friends'
 import {
   setOfferRequest,
   setAnswerChannel,
@@ -14,7 +14,16 @@ import {
   WebRTC,
 } from '@store/modules/webRTC'
 
-import { INFORMATION, GREET, OFFER, ANSWER, OUT } from '@constants/libp2p'
+import useNews from '@hooks/newsHook'
+
+import {
+  INFORMATION,
+  GREET,
+  OFFER,
+  ANSWER,
+  OUT,
+  POSITION,
+} from '@constants/libp2p'
 
 import type { PeerId } from '@libp2p/interface-peer-id'
 import type { PeerInfo } from '@libp2p/interface-peer-info'
@@ -23,16 +32,12 @@ import type { IncomingStreamData } from '@libp2p/interface-registrar'
 import type { Friends } from '@store/modules/friends'
 import { useSnackbar } from 'notistack'
 
-export type Send = (data: string, firend: Friends) => void
-
-interface Libp2pResult {
-  send: Send
-}
-
 const hashMap: Record<string, Friends> = {}
 
-export default (): Libp2pResult => {
+export default (): void => {
   const { enqueueSnackbar } = useSnackbar()
+
+  const { out, offer, answer } = useNews()
 
   const { friends } = useAppSelector((state) => state.friends)
   const { libp2p } = useAppSelector((state) => state.user)
@@ -77,11 +82,11 @@ export default (): Libp2pResult => {
             )
             break
           case OFFER:
-            const { media, offer } = action
+            const { media, offer, isMeta } = action
             if (webRTCCallback.current.isUse) {
-              privateSend(OUT, friend)
+              out(friend)
             } else {
-              dispatch(setOfferRequest({ friend, media, offer }))
+              dispatch(setOfferRequest({ friend, media, offer, isMeta }))
             }
             break
           case ANSWER:
@@ -94,6 +99,10 @@ export default (): Libp2pResult => {
             enqueueSnackbar(`${friend.name} reject`, {
               variant: 'warning',
             })
+            break
+          case POSITION:
+            const { x, y, z } = action
+            dispatch(setPosition({ x, y, z }))
             break
           default:
             break
@@ -165,11 +174,6 @@ export default (): Libp2pResult => {
     libp2p.connectionManager.addEventListener('peer:disconnect', peerDisconnect)
   }
 
-  const send: Send = async (text, friend) => {
-    const data = { text }
-    privateSend(INFORMATION, friend, data)
-  }
-
   const greet = async (peer: PeerId, topic: string) => {
     try {
       const stream = await libp2p!.dialProtocol(peer, [topic])
@@ -196,21 +200,6 @@ export default (): Libp2pResult => {
     dispatch(setFriends(_friends))
   }
 
-  const privateSend = async (
-    type: string,
-    friend: Friends,
-    data: Record<string, unknown> = {}
-  ) => {
-    const { peerId, topic } = friend
-    const stream = await libp2p!.dialProtocol(peerId!, topic)
-    const val = JSON.stringify({
-      type,
-      account_id: accountAddress,
-      ...data,
-    })
-    pipe([uint8ArrayFromString(val)], stream)
-  }
-
   useEffect(() => {
     console.log(`libp2pPeerId:${libp2p!.peerId.toString()}`)
     init()
@@ -229,17 +218,18 @@ export default (): Libp2pResult => {
   useEffect(() => {
     if (webRTC.pc && webRTC.friend) {
       if (webRTC.isOffer) {
-        privateSend(OFFER, webRTC.friend, {
+        offer(webRTC.friend, {
           offer: webRTC.pc?.localDescription,
           media: webRTC.media,
+          isMeta: webRTC.isMeta
         })
       } else {
-        privateSend(ANSWER, webRTC.friend, {
+        answer(webRTC.friend, {
           answer: webRTC.pc?.localDescription,
         })
       }
     } else if (webRTC.friend && webRTC.offer && !webRTC.media) {
-      privateSend(OUT, webRTC.friend)
+      out(webRTC.friend)
     }
   }, [webRTC.pc, webRTC.friend, webRTC.media])
 
@@ -257,6 +247,4 @@ export default (): Libp2pResult => {
   useEffect(() => {
     streamOpenCallback.current = streamOpen
   }, [streamOpen])
-
-  return { send }
 }

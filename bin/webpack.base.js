@@ -111,7 +111,7 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, '../src/index.html'),
-      favicon: path.resolve(__dirname, '../static/favicon.png'),
+      favicon: path.resolve(__dirname, '../src/static/favicon.png'),
       templateContent: ({ htmlWebpackPlugin }) => {
         const templatePath = path.resolve(__dirname, '../src/index.html')
         const template = fs.readFileSync(templatePath, 'utf8')
@@ -124,7 +124,7 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [{
-        from: path.resolve(__dirname, '../static'),
+        from: path.resolve(__dirname, '../src/static'),
         to: path.resolve(__dirname, '../dist/static')
       }],
     }),

@@ -18,7 +18,7 @@ module.exports = merge(base, {
     }),
     new CopyPlugin({
       patterns: [{
-        from: path.resolve(__dirname, '../static'),
+        from: path.resolve(__dirname, '../src/static'),
         to: path.resolve(__dirname, '../docs/static')
       }],
     }),

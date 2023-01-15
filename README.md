@@ -22,6 +22,7 @@ const DEFAULT_PEER_CONNECTION_CONFIG = {
 
 
 # receiver
+## 24
  this.peerConnection.addEventListener('icecandidate', (event) => {
       if (event.candidate == null) {
         return;
@@ -29,5 +30,6 @@ const DEFAULT_PEER_CONNECTION_CONFIG = {
       this.dispatchEvent(new CustomEvent('ice-candidate'));
     });
 
+## 623
      await pEvent(this, 'ice-candidate');
-    await delay(ICECOMPLETE_TIMEOUT);
+     await delay(ICECOMPLETE_TIMEOUT);

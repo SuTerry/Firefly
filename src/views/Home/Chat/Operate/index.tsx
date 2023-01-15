@@ -5,23 +5,25 @@ import { Box, Divider, IconButton, Stack } from '@mui/material'
 import { useAppSelector, useAppDispatch } from '@store/index'
 import { creatOffer } from '@store/modules/webRTC'
 
-import type { Send } from '@views/Home/libp2pHook'
+import useNews from '@hooks/newsHook'
+
 import type { Friends } from '@store/modules/friends'
 
-import { Phone, Videocam } from '@mui/icons-material'
+import { Phone, Videocam, Games } from '@mui/icons-material'
 
 import './index.less'
 
 interface Operate {
-  send: Send
   self: (text: string) => void
   friend: Friends
 }
 
-export default ({ send, self, friend }: Operate): JSX.Element => {
+export default ({ self, friend }: Operate): JSX.Element => {
   const { isUse } = useAppSelector((store) => store.webRTC)
 
   const dispatch = useAppDispatch()
+
+  const { send } = useNews()
 
   const [text, setText] = useState('')
 
@@ -45,9 +47,14 @@ export default ({ send, self, friend }: Operate): JSX.Element => {
     creatStream(media)
   }
 
-  const creatStream = async (media: MediaStreamConstraints) => {
+  const handleGames = () => {
+    const media = { video: false, audio: true }
+    creatStream(media, true)
+  }
+
+  const creatStream = async (media: MediaStreamConstraints, isMeta = false) => {
     if (isUse) return
-    dispatch(creatOffer({ friend, media }))
+    dispatch(creatOffer({ friend, media, isMeta }))
   }
 
   return (
@@ -59,6 +66,9 @@ export default ({ send, self, friend }: Operate): JSX.Element => {
         justifyContent="flex-end"
         spacing={2}
       >
+        <IconButton onClick={handleGames}>
+          <Games />
+        </IconButton>
         <IconButton onClick={handleAudio}>
           <Phone />
         </IconButton>
