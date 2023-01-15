@@ -22,9 +22,11 @@ import { useAppSelector } from '@store/index'
 
 import newsHook from '@hooks/newsHook'
 
+import { STATIC } from '@api/config'
+
 import './index.less'
 
-const path = (name: string): string => `../static/model/${name}`
+const path = (name: string): string => `${STATIC}/model/${name}`
 
 export default (): JSX.Element => {
   const progress = usePreload([path('env.hdr'), path('gallery.glb')], '32.7mb')

@@ -58,3 +58,17 @@ export const CONTRACTID =
           ? 'dev-1672318794070-83988914819590'
           : 'dev-1672318794070-83988914819590'
 
+// static
+export const STATIC =
+  env === 'pro'
+    ? ''
+    : env === 'pre'
+      ? ''
+      : env === 'sit'
+        ? ''
+        : env === 'dev'
+          ? './static'
+          : '../static'
+
+
+
