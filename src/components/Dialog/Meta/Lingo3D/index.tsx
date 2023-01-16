@@ -20,8 +20,6 @@ import type { Dummy as GameDummy } from 'lingo3d'
 
 import { useAppSelector } from '@store/index'
 
-import newsHook from '@hooks/newsHook'
-
 import { STATIC } from '@api/config'
 
 import './index.less'
@@ -29,16 +27,22 @@ import './index.less'
 const path = (name: string): string => `${STATIC}/model/${name}`
 
 export default (): JSX.Element => {
-  const progress = usePreload([path('env.hdr'), path('gallery.glb')], '32.7mb')
+  const progress = usePreload(
+    [
+      path('env.hdr'),
+      path('gallery.glb'),
+      path('kazama.fbx'),
+      path('Idle.fbx'),
+    ],
+    '40.7mb'
+  )
 
-  const { friend } = useAppSelector((store) => store.webRTC)
-  const { position } = useAppSelector((store) => store.friends)
+  const { friend, dataChannel } = useAppSelector((store) => store.webRTC)
   const { nickname } = useAppSelector((store) => store.user)
-
-  const { positions } = newsHook()
 
   const [walking, setWalking] = useState(false)
   const [mouseOver, setMouseOver] = useState(false)
+  const [position, setPosition] = useState({ x: 0, y: 0, z: 0 })
   const camX = mouseOver ? 50 : 0
   const camY = mouseOver ? 100 : 100
   const camZ = mouseOver ? 100 : 300
@@ -85,16 +89,22 @@ export default (): JSX.Element => {
 
       const { x, y, z } = dummy
 
-      positions(friend!, { x, y, z })
+      const value = JSON.stringify({ x, y, z })
+      dataChannel?.send(value)
     }
   }, [])
 
   useEffect(() => {
-    if (position.y === 0) return
-    const { x, y, z } = position
-    remoteRef.current?.lookAt({ x, y, z })
-    setWalking(true)
-  }, [position])
+    dataChannel?.addEventListener('message', (event) => {
+      const position = JSON.parse(event.data)
+
+      if (position.y === 0) return
+      const { x, y, z } = position
+      remoteRef.current?.lookAt({ x, y, z })
+      setPosition({ x, y, z })
+      setWalking(true)
+    })
+  }, [])
 
   const handleIntersect = () => {
     setWalking(false)
@@ -152,7 +162,7 @@ export default (): JSX.Element => {
               ref={dummyRef}
               physics="character"
               x={243.19}
-              y={-800}
+              y={-900}
               z={-577.26}
               roughnessFactor={0}
               metalnessFactor={0.3}
@@ -172,7 +182,7 @@ export default (): JSX.Element => {
             ref={remoteRef}
             physics="character"
             x={243.19}
-            y={-800}
+            y={-900}
             z={-577.26}
             roughnessFactor={0}
             metalnessFactor={0.3}

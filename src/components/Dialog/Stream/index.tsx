@@ -98,11 +98,8 @@ export default (): JSX.Element => {
     } else {
       audioRef.current!.srcObject = stream
     }
+    if (isMeta) dispatch(setMeta(true))
   }, [stream, pc?.connectionState])
-
-  useEffect(() => {
-    if (isMeta && isUse) dispatch(setMeta(true))
-  }, [isUse, isMeta])
 
   return (
     <div>

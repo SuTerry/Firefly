@@ -5,7 +5,7 @@ import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 
 import { useAppSelector, useAppDispatch } from '@store/index'
-import { setFriends, pushRemotes, setPosition } from '@store/modules/friends'
+import { setFriends, pushRemotes } from '@store/modules/friends'
 import {
   setOfferRequest,
   setAnswerChannel,
@@ -16,14 +16,7 @@ import {
 
 import useNews from '@hooks/newsHook'
 
-import {
-  INFORMATION,
-  GREET,
-  OFFER,
-  ANSWER,
-  OUT,
-  POSITION,
-} from '@constants/libp2p'
+import { INFORMATION, GREET, OFFER, ANSWER, OUT } from '@constants/libp2p'
 
 import type { PeerId } from '@libp2p/interface-peer-id'
 import type { PeerInfo } from '@libp2p/interface-peer-info'
@@ -99,10 +92,6 @@ export default (): void => {
             enqueueSnackbar(`${friend.name} reject`, {
               variant: 'warning',
             })
-            break
-          case POSITION:
-            const { x, y, z } = action
-            dispatch(setPosition({ x, y, z }))
             break
           default:
             break
@@ -221,7 +210,7 @@ export default (): void => {
         offer(webRTC.friend, {
           offer: webRTC.pc?.localDescription,
           media: webRTC.media,
-          isMeta: webRTC.isMeta
+          isMeta: webRTC.isMeta,
         })
       } else {
         answer(webRTC.friend, {
