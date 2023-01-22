@@ -5,7 +5,7 @@ interface SASTParams {
   actions: 
     {
       methodName: string
-      args?: Record<sting, string>
+      args?: Record<sting, unknown>
       gas?: number
       deposit?: number
     }[]
@@ -21,7 +21,7 @@ interface SASTResult {
 }
 
 interface Account {
-  viewFunction: <T>(contractId: string, methodName: string, args?: Record<sting, string>) => Promise<T>
+  viewFunction: <T>(contractId: string, methodName: string, args?: Record<sting, unknown>) => Promise<T>
 }
 
 

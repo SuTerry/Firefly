@@ -12,6 +12,7 @@ import friends from './modules/friends'
 import user from './modules/user'
 import webRTC from './modules/webRTC'
 import dialog from './modules/dialog'
+import room from './modules/room'
 
 const reducers = combineReducers({
   wallet,
@@ -21,27 +22,28 @@ const reducers = combineReducers({
   user,
   webRTC,
   dialog,
+  room,
 })
 
 const persistConfig = {
   key: 'Firefly',
   storage,
-  blacklist: ['router', 'friends', 'user', 'webRTC', 'dialog'],
+  blacklist: ['router', 'friends', 'user', 'webRTC', 'dialog', 'room'],
 }
 
 const persistedReducer = persistReducer(persistConfig, reducers)
 
 const store = configureStore({
   reducer: persistedReducer,
-  middleware: [thunk]
+  middleware: [thunk],
 })
-
 
 export default store
 
 export type RootState = ReturnType<typeof store.getState>
 
-export type AppDispatch = ThunkDispatch<RootState, undefined, AnyAction> & Dispatch<AnyAction>
+export type AppDispatch = ThunkDispatch<RootState, undefined, AnyAction> &
+  Dispatch<AnyAction>
 
 export const useAppDispatch = (): AppDispatch => useDispatch<AppDispatch>()
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector

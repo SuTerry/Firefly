@@ -19,7 +19,7 @@ export default class Contracts {
 
   protected async senderChangeMethod(
     methodName: string,
-    args?: Record<string, string>
+    args?: Record<string, unknown>
   ): Promise<string> {
     const tx = {
       receiverId: this.address,
@@ -38,7 +38,7 @@ export default class Contracts {
 
   protected async senderViewMethod<T>(
     methodName: string,
-    args?: Record<string, string>
+    args?: Record<string, unknown>
   ): Promise<T> {
     return window.near!.account().viewFunction(this.address, methodName, args)
   }
@@ -59,7 +59,7 @@ export default class Contracts {
 
   protected async changeContract(
     methodName: string,
-    args?: Record<string, string>
+    args?: Record<string, unknown>
   ): Promise<string> {
     const { currentWallet } = store.getState().wallet
     switch (currentWallet) {
@@ -72,7 +72,7 @@ export default class Contracts {
 
   protected async viewContract<T>(
     methodName: string,
-    args?: Record<string, string>
+    args?: Record<string, unknown>
   ): Promise<T> {
     const { currentWallet } = store.getState().wallet
     switch (currentWallet) {

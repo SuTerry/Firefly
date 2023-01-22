@@ -4,7 +4,15 @@ import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 
 import { useAppSelector } from '@store/index'
 
-import { ANSWER, INFORMATION, OFFER, OUT } from '@constants/libp2p'
+import {
+  ANSWER,
+  INFORMATION,
+  OFFER,
+  OUT,
+  DISCOVERY,
+  ROOMOFFER,
+  ROOMANSWER,
+} from '@constants/libp2p'
 
 import type { Friends } from '@store/modules/friends'
 
@@ -17,6 +25,9 @@ interface NewsResult {
   out: Out
   offer: News
   answer: News
+  discovery: Out
+  roomOffer: News
+  roomAnswer: News
 }
 
 export default (): NewsResult => {
@@ -56,11 +67,26 @@ export default (): NewsResult => {
     privateSend(ANSWER, friend, data)
   }
 
+  const discovery: Out = async (friend) => {
+    
+    privateSend(DISCOVERY, friend)
+  }
+
+  const roomOffer: News = async (friend, data) => {
+    privateSend(ROOMOFFER, friend, data)
+  }
+
+  const roomAnswer: News = async (friend, data) => {
+    privateSend(ROOMANSWER, friend, data)
+  }
 
   return {
     send,
     out,
     offer,
     answer,
+    discovery,
+    roomOffer,
+    roomAnswer,
   }
 }

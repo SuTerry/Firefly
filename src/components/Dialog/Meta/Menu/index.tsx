@@ -8,8 +8,9 @@ import {
   Button,
 } from '@mui/material'
 
-import { useAppDispatch } from '@store/index'
+import { useAppDispatch, useAppSelector } from '@store/index'
 import { initWebRTCState } from '@store/modules/webRTC'
+import { initRoom } from '@store/modules/room'
 
 import langHook from '@hooks/localHook'
 import { metaLang } from '@langs/index'
@@ -26,15 +27,34 @@ const BootstrapDialog = styled(Dialog)(() => ({
 }))
 
 export default ({ open, setOpen }: MwnuProps): JSX.Element => {
+  const { roomOpen } = useAppSelector((store) => store.dialog)
+  const { playes } = useAppSelector((store) => store.room)
+  const { nickname } = useAppSelector((store) => store.user)
+  const { accountAddress } = useAppSelector((store) => store.wallet)
   const dispatch = useAppDispatch()
 
   const loacl = langHook()
 
   const handleClose = () => {
-    setOpen(false)
-    dispatch(initWebRTCState())
-  }
+    if (roomOpen) {
+      const data = {
+        type: 'out',
+        data: {
+          name: nickname,
+          id: accountAddress,
+        },
+      }
+      const value = JSON.stringify(data)
+      Object.values(playes).forEach((play) => {
+        play.dataChannel?.send(value)
+      })
+      dispatch(initRoom())
+    } else {
+      dispatch(initWebRTCState())
+    }
 
+    setOpen(false)
+  }
 
   return (
     <BootstrapDialog onClose={() => setOpen(false)} open={open}>

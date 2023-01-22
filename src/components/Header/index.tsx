@@ -22,6 +22,7 @@ import { useAppSelector, useAppDispatch } from '@store/index'
 import { setLocal } from '@store/modules/local'
 import { setDialogOpen } from '@store/modules/wallet'
 import { setDialogOpen as registerOpen } from '@store/modules/user'
+import { setRoom } from '@store/modules/dialog'
 
 export default (): JSX.Element => {
   const { headerImg, nickname, isCW, isLogin } = useAppSelector(
@@ -45,7 +46,9 @@ export default (): JSX.Element => {
       {/* AppBar */}
       <AppBar color="transparent" position="static">
         <Toolbar>
-          <Box sx={{ flexGrow: 1, color: '#fff' }}>{isLogin && currentFriend?.name}</Box>
+          <Box sx={{ flexGrow: 1, color: '#fff' }}>
+            {isLogin && currentFriend?.name}
+          </Box>
           <IconButton
             size="large"
             edge="start"
@@ -76,19 +79,28 @@ export default (): JSX.Element => {
           </Menu>
           {isCW ? (
             isLogin ? (
-              <Button
-                color="primary"
-                sx={{ textTransform: 'none' }}
-                startIcon={
-                  <img
-                    style={{ width: '24px', height: '24px' }}
-                    src={`https://ipfs.io/ipfs/${headerImg}`}
-                  />
-                }
-                onClick={() => dispatch(registerOpen(true))}
-              >
-                {nickname}
-              </Button>
+              <>
+                <Button
+                  color="primary"
+                  sx={{ mr: 2 }}
+                  onClick={() => dispatch(setRoom(true))}
+                >
+                  room
+                </Button>
+                <Button
+                  color="primary"
+                  sx={{ textTransform: 'none' }}
+                  startIcon={
+                    <img
+                      style={{ width: '24px', height: '24px' }}
+                      src={`https://ipfs.io/ipfs/${headerImg}`}
+                    />
+                  }
+                  onClick={() => dispatch(registerOpen(true))}
+                >
+                  {nickname}
+                </Button>
+              </>
             ) : (
               <></>
             )

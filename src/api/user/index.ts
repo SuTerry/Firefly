@@ -1,5 +1,6 @@
 import Contracts from '@api/contract'
-import { Friends } from '@store/modules/friends'
+import type { Friends } from '@store/modules/friends'
+import type { Room } from '@store/modules/room'
 
 interface UserContract {
   register: (params: { name: string; image: string }) => boolean
@@ -8,13 +9,18 @@ interface UserContract {
   add_friend: (params: { friend_account_id: string }) => boolean
 }
 
+interface RoomListRes {
+  0: number
+  1: Room
+}
+
 class User extends Contracts {
   changeMethods = ['register', 'login', 'add_friend']
 
   viewMethods = ['get_friend_list']
 
   contract(): UserContract {
-    return (this._contract as unknown) as UserContract
+    return this._contract as unknown as UserContract
   }
 
   async register(name: string, image: string): Promise<boolean> {
@@ -33,6 +39,20 @@ class User extends Contracts {
 
   async add_friend(friend_account_id: string): Promise<boolean> {
     const res = await this.changeContract('add_friend', { friend_account_id })
+    return JSON.parse(res)
+  }
+
+  async get_room_list(): Promise<RoomListRes[]> {
+    return this.viewContract<RoomListRes[]>('get_room_list')
+  }
+
+  async create_room(name: string, nft: string[]): Promise<number> {
+    const res = await this.changeContract('create_room', { name, nft })
+    return JSON.parse(res)
+  }
+
+  async destory_room(room_id: number): Promise<number> {
+    const res = await this.changeContract('destory_room', { room_id })
     return JSON.parse(res)
   }
 }

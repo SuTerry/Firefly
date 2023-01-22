@@ -13,17 +13,32 @@ import {
   initWebRTCState,
   WebRTC,
 } from '@store/modules/webRTC'
+import {
+  creatRoomAnswer,
+  creatRoomOffer,
+  setRoomOfferRemote,
+} from '@store/modules/room'
 
 import useNews from '@hooks/newsHook'
 
-import { INFORMATION, GREET, OFFER, ANSWER, OUT } from '@constants/libp2p'
+import {
+  INFORMATION,
+  GREET,
+  OFFER,
+  ANSWER,
+  OUT,
+  DISCOVERY,
+  ROOMOFFER,
+  ROOMANSWER,
+} from '@constants/libp2p'
+
+import { useSnackbar } from 'notistack'
 
 import type { PeerId } from '@libp2p/interface-peer-id'
 import type { PeerInfo } from '@libp2p/interface-peer-info'
 import type { Connection } from '@libp2p/interface-connection'
 import type { IncomingStreamData } from '@libp2p/interface-registrar'
 import type { Friends } from '@store/modules/friends'
-import { useSnackbar } from 'notistack'
 
 const hashMap: Record<string, Friends> = {}
 
@@ -37,6 +52,7 @@ export default (): void => {
   const { accountAddress } = useAppSelector((state) => state.wallet)
   const { webRTC } = useAppSelector((state) => state)
   const { streamOpen } = useAppSelector((state) => state.dialog)
+  const { room } = useAppSelector((state) => state.room)
 
   const dispatch = useAppDispatch()
 
@@ -92,6 +108,37 @@ export default (): void => {
             enqueueSnackbar(`${friend.name} reject`, {
               variant: 'warning',
             })
+            break
+          case DISCOVERY:
+            if (room) {
+              console.log(`ready create offer of ${friend.name}`)
+              dispatch(
+                creatRoomOffer({
+                  friend,
+                  media: { video: false, audio: true },
+                  isMeta: false,
+                })
+              )
+            }
+            break
+          case ROOMOFFER:
+            console.log(`ready create answer of ${friend.name}`)
+            dispatch(
+              creatRoomAnswer({
+                friend,
+                offer: action.offer,
+                position: action.position
+              })
+            )
+            break
+          case ROOMANSWER:
+            console.log(`receive answer of ${friend.name}`)
+            dispatch(
+              setRoomOfferRemote({
+                key: friend.account_id,
+                answer: action.answer,
+              })
+            )
             break
           default:
             break
@@ -200,9 +247,10 @@ export default (): void => {
   useEffect(() => {
     friendsCallback.current = friends
     const topices = friends.map((friend) => friend.topic)
+    if (room) topices.push(room.topic)
     libp2p?.unhandle(topices)
     libp2p?.handle(topices, handle)
-  }, [friends])
+  }, [friends, room])
 
   useEffect(() => {
     if (webRTC.pc && webRTC.friend) {

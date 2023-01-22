@@ -1,15 +1,18 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import { creatOffer, initWebRTCState, setOfferRequest } from './webRTC'
+import { initRoom } from './room'
 
 interface Dialog {
   streamOpen: boolean
   metaOpen: boolean
+  roomOpen: boolean
 }
 
 const initialState: Dialog = {
   streamOpen: false,
   metaOpen: false,
+  roomOpen: false,
 }
 
 const dialog = createSlice({
@@ -18,6 +21,9 @@ const dialog = createSlice({
   reducers: {
     setMeta(state, { payload }: PayloadAction<boolean>) {
       state.metaOpen = payload
+    },
+    setRoom(state, { payload }: PayloadAction<boolean>) {
+      state.roomOpen = payload
     },
   },
   extraReducers(builder) {
@@ -31,7 +37,10 @@ const dialog = createSlice({
       state.streamOpen = false
       state.metaOpen = false
     })
+    builder.addCase(initRoom, (state) => {
+      state.metaOpen = false
+    })
   },
 })
-export const { setMeta } = dialog.actions
+export const { setMeta, setRoom } = dialog.actions
 export default dialog.reducer
