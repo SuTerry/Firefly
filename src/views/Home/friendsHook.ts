@@ -34,6 +34,7 @@ export default (): void => {
 
   useEffect(() => {
     savedCallback.current = friends
+    console.log(friends, 'friends')
   })
 
   useEffect(() => {

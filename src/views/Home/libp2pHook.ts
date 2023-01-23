@@ -73,6 +73,8 @@ export default (): void => {
         if (!friend) return
         switch (action.type) {
           case GREET:
+            console.log(hashMap[key], 'hashMap[key]')
+            console.log(friend.peerId, 'friend.peerId')
             if (friend.peerId) return
             if (!hashMap[key].account_id) {
               const { peerId } = hashMap[key]
@@ -247,7 +249,7 @@ export default (): void => {
   useEffect(() => {
     friendsCallback.current = friends
     const topices = friends.map((friend) => friend.topic)
-    if (room) topices.push(room.topic)
+    // if (room) topices.push(room.topic)
     libp2p?.unhandle(topices)
     libp2p?.handle(topices, handle)
   }, [friends, room])
