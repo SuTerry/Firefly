@@ -46,7 +46,9 @@ export default ({ open, setOpen }: MwnuProps): JSX.Element => {
       }
       const value = JSON.stringify(data)
       Object.values(playes).forEach((play) => {
-        play.dataChannel?.send(value)
+        try {
+          play.dataChannel?.send(value)
+        } catch (error) {}
       })
       dispatch(initRoom())
     } else {

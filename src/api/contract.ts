@@ -40,6 +40,9 @@ export default class Contracts {
     methodName: string,
     args?: Record<string, unknown>
   ): Promise<T> {
+    console.log(window.near, 'window.near')
+    console.log(window.near?.account(), 'window.near?.account()')
+    
     return window.near!.account().viewFunction(this.address, methodName, args)
   }
 

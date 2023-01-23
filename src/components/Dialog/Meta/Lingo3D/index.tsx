@@ -220,6 +220,7 @@ export default (): JSX.Element => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (event: MessageEvent<any>) => {
         const { type, data } = JSON.parse(event.data)
+        console.log('type', type)
         if (type === 'position') {
           const { x, y, z } = data
           remoteDummyRef.current[key]?.lookAt({ x, y, z })
@@ -283,8 +284,8 @@ export default (): JSX.Element => {
           data: { x, y, z },
         }
         const value = JSON.stringify(data)
-
         Object.values(playes).forEach((play) => {
+          console.log(`send value ${value}`)
           if (play) play.dataChannel?.send(value)
         })
       }

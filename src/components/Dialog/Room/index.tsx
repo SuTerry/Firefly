@@ -59,6 +59,8 @@ export default (): JSX.Element => {
 
   const getList = async () => {
     const _list = await userApi.get_room_list()
+    console.log(`room list: ${_list}`)
+    
     setRoomList(_list.map((item) => item[1]))
   }
 
