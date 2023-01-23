@@ -150,8 +150,6 @@ export default (): JSX.Element => {
   }, [])
 
   useEffect(() => {
-    console.log('playes-players: ', players)
-    
     const keys = Object.keys(playes)
     const _players = { ...players }
     let update = false
@@ -215,53 +213,58 @@ export default (): JSX.Element => {
   }, [playes])
 
   useEffect(() => {
-    console.log('players-players', players)
-    
     Object.keys(players).forEach((key) => {
       if (!players[key].connected) return
       // 接收其他玩家移动位置
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (event: MessageEvent<any>) => {
-        const { type, data } = JSON.parse(event.data)
-        console.log('type', type)
-        if (type === 'position') {
-          const { x, y, z } = data
-          remoteDummyRef.current[key]?.lookAt({ x, y, z })
-          const _positions = { ...position }
-          _positions[key] = { x, y, z }
-          setPosition(_positions)
-          const _walking = { ...walking }
-          _walking[key] = true
-          setWalking(_walking)
-        } else if (type === 'out') {
-          const { name, id } = data
-          // players
-          const _players = { ...players }
-          delete _players[id]
-          setPlayers({ ..._players })
-          // position
-          const _position = { ...position }
-          delete _position[id]
-          setPosition({ ..._position })
-          // walking
-          const _walking = { ...walking }
-          delete _walking[id]
-          setWalking({ ..._walking })
-          // talking
-          const _talking = { ...talking }
-          delete _talking[id]
-          setWalking({ ..._talking })
-          // playes
-          dispatch(removePlay(id))
-          enqueueSnackbar(`${name} Out`, {
-            variant: 'warning',
-          })
-          playes[key].dataChannel?.removeEventListener('message', message)
+        try {
+          const { type, data } = JSON.parse(event.data)
+          console.log('type', type)
+          if (type === 'position') {
+            const { x, y, z } = data
+            remoteDummyRef.current[key]?.lookAt({ x, y, z })
+            const _positions = { ...position }
+            _positions[key] = { x, y, z }
+            setPosition(_positions)
+            const _walking = { ...walking }
+            _walking[key] = true
+            setWalking(_walking)
+          } else if (type === 'out') {
+            const { name, id } = data
+            // players
+            const _players = { ...players }
+            delete _players[id]
+            setPlayers({ ..._players })
+            // position
+            const _position = { ...position }
+            delete _position[id]
+            setPosition({ ..._position })
+            // walking
+            const _walking = { ...walking }
+            delete _walking[id]
+            setWalking({ ..._walking })
+            // talking
+            const _talking = { ...talking }
+            delete _talking[id]
+            setWalking({ ..._talking })
+            // playes
+            dispatch(removePlay(id))
+            enqueueSnackbar(`${name} Out`, {
+              variant: 'warning',
+            })
+            playes[key].dataChannel?.removeEventListener('message', message)
+          }
+        } catch (error) {
+          console.log('message error: ', error)
         }
       }
-      if (playes[key])
+      if (playes[key]) {
+        console.log('onMessage')
         playes[key].dataChannel?.addEventListener('message', message)
+      }
+        
 
       // 键盘WASD控制
       keyboard.onKeyPress = (_, keys) => {
@@ -289,7 +292,7 @@ export default (): JSX.Element => {
         }
         const value = JSON.stringify(data)
         Object.values(playes).forEach((play) => {
-          console.log(`send type ${data.type}`)
+          console.log(`send ${play?.name} type ${data.type}`)
           if (play) play.dataChannel?.send(value)
         })
       }
@@ -383,16 +386,17 @@ export default (): JSX.Element => {
                   rotationZ={180}
                   rotationX={nft.rotationX}
                 />
-                {mouseOver[index] && <HTML>
-                  <div className="nft_big_img">
-                    {
-                      nft.width > nft.height
-                        ? <img src={nft.texture} width={nft.width} />
-                        : <img src={nft.texture} height={nft.height} />
-                    }
-                  </div>
-                </HTML>}
-
+                {mouseOver[index] && (
+                  <HTML>
+                    <div className="nft_big_img">
+                      {nft.width > nft.height ? (
+                        <img src={nft.texture} width={nft.width} />
+                      ) : (
+                        <img src={nft.texture} height={nft.height} />
+                      )}
+                    </div>
+                  </HTML>
+                )}
               </Find>
             ))}
           </Model>
