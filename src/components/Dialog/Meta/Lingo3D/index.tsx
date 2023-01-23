@@ -150,6 +150,8 @@ export default (): JSX.Element => {
   }, [])
 
   useEffect(() => {
+    console.log('playes-players: ', players)
+    
     const keys = Object.keys(playes)
     const _players = { ...players }
     let update = false
@@ -213,6 +215,8 @@ export default (): JSX.Element => {
   }, [playes])
 
   useEffect(() => {
+    console.log('players-players', players)
+    
     Object.keys(players).forEach((key) => {
       if (!players[key].connected) return
       // 接收其他玩家移动位置
@@ -285,7 +289,7 @@ export default (): JSX.Element => {
         }
         const value = JSON.stringify(data)
         Object.values(playes).forEach((play) => {
-          console.log(`send value ${value}`)
+          console.log(`send type ${data.type}`)
           if (play) play.dataChannel?.send(value)
         })
       }
