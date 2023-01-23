@@ -65,6 +65,7 @@ export default (): JSX.Element => {
   const { nickname } = useAppSelector((store) => store.user)
   const { playes, room } = useAppSelector((store) => store.room)
   const { friends } = useAppSelector((store) => store.friends)
+  const { accountAddress } = useAppSelector((store) => store.wallet)
 
   const dispatch = useAppDispatch()
 
@@ -106,31 +107,59 @@ export default (): JSX.Element => {
     const _walking = { ...walking }
     _walking[key] = false
     setWalking(_walking)
-    const { x, y, z } = position[key]
-    remoteDummyRef.current[key]!.x = x
-    remoteDummyRef.current[key]!.y = y
-    remoteDummyRef.current[key]!.z = z
+    setTimeout(() => {
+      const { x, y, z } = position[key]
+      remoteDummyRef.current[key]!.x = x
+      remoteDummyRef.current[key]!.y = y
+      remoteDummyRef.current[key]!.z = z
+    }, 300)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const message = (event: MessageEvent<any>) => {
+    const { type, data } = JSON.parse(event.data)
+    console.log('type', type)
+    if (type === 'position') {
+      const { x, y, z, key } = data
+      remoteDummyRef.current[key]?.lookAt({ x, y, z })
+      const _positions = { ...position }
+      _positions[key] = { x, y, z }
+      setPosition(_positions)
+      const _walking = { ...walking }
+      _walking[key] = true
+      setWalking(_walking)
+    } else if (type === 'out') {
+      const { name, id } = data
+      playOut(name, id)
+    }
+  }
+
+  const playOut = (name: string, id: string) => {
+    // players
+    const _players = { ...players }
+    delete _players[id]
+    setPlayers({ ..._players })
+    // position
+    const _position = { ...position }
+    delete _position[id]
+    setPosition({ ..._position })
+    // walking
+    const _walking = { ...walking }
+    delete _walking[id]
+    setWalking({ ..._walking })
+    // talking
+    const _talking = { ...talking }
+    delete _talking[id]
+    setWalking({ ..._talking })
+    // playes
+    dispatch(removePlay(id))
+    enqueueSnackbar(`${name} Out`, {
+      variant: 'warning',
+    })
+    playes[id].dataChannel?.removeEventListener('message', message)
   }
 
   useEffect(() => {
-    // 键盘WASD控制
-    keyboard.onKeyPress = (_, keys) => {
-      const dummy = dummyRef.current
-      if (!dummy) return
-
-      if (keys.has('w')) {
-        dummy.strideForward = -1
-      } else if (keys.has('s')) {
-        dummy.strideForward = 1
-      } else if (keys.has('a')) {
-        dummy.strideRight = 1
-      } else if (keys.has('d')) {
-        dummy.strideRight = -1
-      } else {
-        dummy.strideForward = 0
-        dummy.strideRight = 0
-      }
-    }
     if (!room) return
     // 加载nft
     NFTS.forEach(async (nft, index) => {
@@ -166,6 +195,14 @@ export default (): JSX.Element => {
         if (!_players[key].dataChannel && play.dataChannel) {
           _players[key].dataChannel = play.dataChannel
           update = true
+        }
+
+        const { x, y, z } = play.initPosition || { x: 0, y: 0, z: 0 }
+        if (x !== 0 && !!remoteDummyRef.current[key]) {
+          remoteDummyRef.current[key]?.lookAt({ x, y, z })
+          remoteDummyRef.current[key]!.x = x
+          remoteDummyRef.current[key]!.y = y
+          remoteDummyRef.current[key]!.z = z
         }
         return
       }
@@ -205,101 +242,55 @@ export default (): JSX.Element => {
       _talking[key] = false
       setTalking(_talking)
       // }
-
-      const { x, y, z } = play.initPosition || { x: 0, y: 0, z: 0 }
-      if (x !== 0 && !!remoteDummyRef.current[key]) {
-        remoteDummyRef.current[key]?.lookAt({ x, y, z })
-        remoteDummyRef.current[key]!.x = x
-        remoteDummyRef.current[key]!.y = y
-        remoteDummyRef.current[key]!.z = z
-      }
     })
 
     if (update) setPlayers({ ..._players })
   }, [playes])
 
   useEffect(() => {
+    // 键盘WASD控制
+    keyboard.onKeyPress = (_, keys) => {
+      const dummy = dummyRef.current
+      if (!dummy) return
+
+      if (keys.has('w')) {
+        dummy.strideForward = -1
+      } else if (keys.has('s')) {
+        dummy.strideForward = 1
+      } else if (keys.has('a')) {
+        dummy.strideRight = 1
+      } else if (keys.has('d')) {
+        dummy.strideRight = -1
+      } else {
+        dummy.strideForward = 0
+        dummy.strideRight = 0
+      }
+
+      const { x, y, z } = dummy
+
+      const data = {
+        type: 'position',
+        data: { x, y, z, key: accountAddress },
+      }
+      const value = JSON.stringify(data)
+      Object.keys(playes).forEach((key) => {
+        const play = playes[key]
+        console.log(`send ${play?.name} type ${data.type}`)
+        try {
+          if (play && players[key].connected) play.dataChannel?.send(value)
+        } catch (error) {
+          playOut(play.name, key)
+        }
+      })
+    }
+
     Object.keys(players).forEach((key) => {
       if (!players[key].connected) return
-      // 接收其他玩家移动位置
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const message = (event: MessageEvent<any>) => {
-        const { type, data } = JSON.parse(event.data)
-        console.log('type', type)
-        if (type === 'position') {
-          const { x, y, z } = data
-          remoteDummyRef.current[key]?.lookAt({ x, y, z })
-          const _positions = { ...position }
-          _positions[key] = { x, y, z }
-          setPosition(_positions)
-          const _walking = { ...walking }
-          _walking[key] = true
-          setWalking(_walking)
-        } else if (type === 'out') {
-          const { name, id } = data
-          // players
-          const _players = { ...players }
-          delete _players[id]
-          setPlayers({ ..._players })
-          // position
-          const _position = { ...position }
-          delete _position[id]
-          setPosition({ ..._position })
-          // walking
-          const _walking = { ...walking }
-          delete _walking[id]
-          setWalking({ ..._walking })
-          // talking
-          const _talking = { ...talking }
-          delete _talking[id]
-          setWalking({ ..._talking })
-          // playes
-          dispatch(removePlay(id))
-          enqueueSnackbar(`${name} Out`, {
-            variant: 'warning',
-          })
-          playes[key].dataChannel?.removeEventListener('message', message)
-        }
-      }
+      // 接收其他玩家移动位置
       if (playes[key]) {
         console.log(playes[key].dataChannel, 'playes[key].dataChannel')
         playes[key].dataChannel?.addEventListener('message', message)
-      }
-
-      // 键盘WASD控制
-      keyboard.onKeyPress = (_, keys) => {
-        const dummy = dummyRef.current
-        if (!dummy) return
-
-        if (keys.has('w')) {
-          dummy.strideForward = -1
-        } else if (keys.has('s')) {
-          dummy.strideForward = 1
-        } else if (keys.has('a')) {
-          dummy.strideRight = 1
-        } else if (keys.has('d')) {
-          dummy.strideRight = -1
-        } else {
-          dummy.strideForward = 0
-          dummy.strideRight = 0
-        }
-
-        const { x, y, z } = dummy
-
-        const data = {
-          type: 'position',
-          data: { x, y, z },
-        }
-        const value = JSON.stringify(data)
-        Object.values(playes).forEach((play) => {
-          console.log(`send ${play?.name} type ${data.type}`)
-          try {
-            if (play) play.dataChannel?.send(value)
-          } catch (error) {
-            
-          }
-        })
       }
 
       // 音频
