@@ -157,8 +157,14 @@ export default (): JSX.Element => {
       const play = playes[key]
 
       if (_players.hasOwnProperty(key)) {
+        // stream
         if (!_players[key].stream && play.stream) {
           _players[key].stream = play.stream
+          update = true
+        }
+        // dataChannel
+        if (!_players[key].dataChannel && play.dataChannel) {
+          _players[key].dataChannel = play.dataChannel
           update = true
         }
         return
@@ -219,52 +225,47 @@ export default (): JSX.Element => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (event: MessageEvent<any>) => {
-        try {
-          const { type, data } = JSON.parse(event.data)
-          console.log('type', type)
-          if (type === 'position') {
-            const { x, y, z } = data
-            remoteDummyRef.current[key]?.lookAt({ x, y, z })
-            const _positions = { ...position }
-            _positions[key] = { x, y, z }
-            setPosition(_positions)
-            const _walking = { ...walking }
-            _walking[key] = true
-            setWalking(_walking)
-          } else if (type === 'out') {
-            const { name, id } = data
-            // players
-            const _players = { ...players }
-            delete _players[id]
-            setPlayers({ ..._players })
-            // position
-            const _position = { ...position }
-            delete _position[id]
-            setPosition({ ..._position })
-            // walking
-            const _walking = { ...walking }
-            delete _walking[id]
-            setWalking({ ..._walking })
-            // talking
-            const _talking = { ...talking }
-            delete _talking[id]
-            setWalking({ ..._talking })
-            // playes
-            dispatch(removePlay(id))
-            enqueueSnackbar(`${name} Out`, {
-              variant: 'warning',
-            })
-            playes[key].dataChannel?.removeEventListener('message', message)
-          }
-        } catch (error) {
-          console.log('message error: ', error)
+        const { type, data } = JSON.parse(event.data)
+        console.log('type', type)
+        if (type === 'position') {
+          const { x, y, z } = data
+          remoteDummyRef.current[key]?.lookAt({ x, y, z })
+          const _positions = { ...position }
+          _positions[key] = { x, y, z }
+          setPosition(_positions)
+          const _walking = { ...walking }
+          _walking[key] = true
+          setWalking(_walking)
+        } else if (type === 'out') {
+          const { name, id } = data
+          // players
+          const _players = { ...players }
+          delete _players[id]
+          setPlayers({ ..._players })
+          // position
+          const _position = { ...position }
+          delete _position[id]
+          setPosition({ ..._position })
+          // walking
+          const _walking = { ...walking }
+          delete _walking[id]
+          setWalking({ ..._walking })
+          // talking
+          const _talking = { ...talking }
+          delete _talking[id]
+          setWalking({ ..._talking })
+          // playes
+          dispatch(removePlay(id))
+          enqueueSnackbar(`${name} Out`, {
+            variant: 'warning',
+          })
+          playes[key].dataChannel?.removeEventListener('message', message)
         }
       }
       if (playes[key]) {
-        console.log('onMessage')
+        console.log(playes[key].dataChannel, 'playes[key].dataChannel')
         playes[key].dataChannel?.addEventListener('message', message)
       }
-        
 
       // 键盘WASD控制
       keyboard.onKeyPress = (_, keys) => {
@@ -445,7 +446,7 @@ export default (): JSX.Element => {
                   z={1938.77}
                   roughnessFactor={0}
                   metalnessFactor={0.3}
-                  animation={walking ? 'walking' : 'idle'}
+                  animation={walking[key] ? 'walking' : 'idle'}
                   strideMove
                   intersectIds={[`cursor-${key}`]}
                   onIntersect={() => handleIntersect(key)}
