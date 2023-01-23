@@ -108,7 +108,9 @@ const room = createSlice({
     setAnswerChannel(state, { payload }: PayloadAction<SetAnswerChannelProps>) {
       const { key, dataChannel } = payload
       console.log(`set dataChannel of ${state.playes[key].name}`)
-      state.playes[key].dataChannel = dataChannel
+      const _playes = { ...state.playes }
+      _playes[key].dataChannel = dataChannel
+      state.playes = Object.assign(state.playes, _playes)
     },
     initRoom(state) {
       const { playes } = state
