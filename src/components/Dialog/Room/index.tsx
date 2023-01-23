@@ -74,8 +74,12 @@ export default (): JSX.Element => {
   }
 
   useEffect(() => {
-    if (!open) getList()
+    if (!open && roomOpen) getList()
   }, [open])
+
+  useEffect(() => {
+    if (roomOpen) getList()
+  }, [roomOpen])
 
   useEffect(() => {
     if (room) dispatch(setMeta(true))
