@@ -54,3 +54,11 @@ export const scoreGrade = (score: number): string => {
       : 'Pass'
     : 'Fail'
 }
+
+export const getImgWH = (url: string): Promise<[number, number]> => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.src = url
+    img.onload = () => resolve([img.width, img.height])
+  })
+}

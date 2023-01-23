@@ -30,6 +30,8 @@ import { NFTS } from '@constants/exhibition'
 
 import { STATIC } from '@api/config'
 
+import { getImgWH } from '@utils/index'
+
 import type { Dummy as GameDummy } from 'lingo3d'
 
 import './index.less'
@@ -131,7 +133,13 @@ export default (): JSX.Element => {
     }
     if (!room) return
     // 加载nft
-    NFTS.forEach((nft, index) => (nft.texture = room.nft[index]))
+    NFTS.forEach(async (nft, index) => {
+      const url = room.nft[index]
+      const [width, height] = await getImgWH(url)
+      nft.texture = url
+      nft.width = width
+      nft.height = height
+    })
 
     // 加入好友
     friends.forEach((friend) => {
@@ -370,9 +378,16 @@ export default (): JSX.Element => {
                   rotationZ={180}
                   rotationX={nft.rotationX}
                 />
-                <HTML>
-                  <p>{nft.name}</p>
-                </HTML>
+                {mouseOver[index] && <HTML>
+                  <div className="nft_big_img">
+                    {
+                      nft.width > nft.height
+                        ? <img src={nft.texture} width={nft.width} />
+                        : <img src={nft.texture} height={nft.height} />
+                    }
+                  </div>
+                </HTML>}
+
               </Find>
             ))}
           </Model>
