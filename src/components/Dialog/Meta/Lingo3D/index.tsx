@@ -176,7 +176,7 @@ export default (): JSX.Element => {
       // if (play.pc.connectionState !== 'connected') {
       if (play.identity === 'offer') {
         console.log(`send offer of ${play.name}`)
-        const { x, y, z } = dummyRef.current!
+        const { x, y, z } = dummyRef.current || { x: 0, y: 0, z: 0 }
         roomOffer(play.friend, {
           offer: play.pc?.localDescription,
           position: { x, y, z },
@@ -294,7 +294,11 @@ export default (): JSX.Element => {
         const value = JSON.stringify(data)
         Object.values(playes).forEach((play) => {
           console.log(`send ${play?.name} type ${data.type}`)
-          if (play) play.dataChannel?.send(value)
+          try {
+            if (play) play.dataChannel?.send(value)
+          } catch (error) {
+            
+          }
         })
       }
 
