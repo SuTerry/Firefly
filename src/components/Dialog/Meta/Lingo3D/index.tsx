@@ -15,9 +15,8 @@ import {
   useSpring,
   useWindowSize,
   World,
+  HTMLMesh,
 } from 'lingo3d-react'
-
-import { VolumeUp } from '@mui/icons-material'
 
 import { useSnackbar } from 'notistack'
 
@@ -32,12 +31,16 @@ import { STATIC } from '@api/config'
 
 import { getImgWH } from '@utils/index'
 
-import type { Dummy as GameDummy } from 'lingo3d'
+import type { Dummy as GameDummy, ThirdPersonCamera as GameThirdPersonCamera, HTMLMesh as GameHTMLMesh } from 'lingo3d'
 
 import './index.less'
 
+import { VolumeUp } from '@mui/icons-material'
+
 const path = (name: string): string => `${STATIC}/model/${name}`
-const initZ = -800
+const initX = 860
+const initY = -360
+const initZ = 994
 
 interface Position {
   x: number
@@ -50,6 +53,8 @@ interface Player extends Play {
 }
 
 export default (): JSX.Element => {
+  let timer: NodeJS.Timeout | undefined
+
   const progress = usePreload(
     [
       path('env.hdr'),
@@ -99,20 +104,28 @@ export default (): JSX.Element => {
   const fov = windowSize.width < windowSize.height ? 100 : 90
 
   const dummyRef = useRef<GameDummy>(null)
+  const cameraRef = useRef<GameThirdPersonCamera>(null)
+  const nameRef = useRef<GameHTMLMesh>(null)
   const remoteDummyRef = useRef<Record<string, GameDummy | null>>({})
+  const remoteNameRef = useRef<Record<string, GameHTMLMesh | null>>({})
   const remoteAudioRef = useRef<Record<string, HTMLAudioElement | null>>({})
 
   // 其他玩家碰撞到位置后停止移动，并瞬移到结束的位置上
   const handleIntersect = (key: string) => {
-    const _walking = { ...walking }
-    _walking[key] = false
-    setWalking(_walking)
     setTimeout(() => {
       const { x, y, z } = position[key]
       remoteDummyRef.current[key]!.x = x
       remoteDummyRef.current[key]!.y = y
       remoteDummyRef.current[key]!.z = z
     }, 300)
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      timer = undefined
+      const _walking = { ...walking }
+      _walking[key] = false
+      setWalking(_walking)
+    }, 300)
+
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -198,11 +211,11 @@ export default (): JSX.Element => {
         }
 
         const { x, y, z } = play.initPosition || { x: 0, y: 0, z: 0 }
-        if (x !== 0 && !!remoteDummyRef.current[key]) {
-          remoteDummyRef.current[key]?.lookAt({ x, y, z })
+        if (x !== 0 && x !== 860 &&  !!remoteDummyRef.current[key]) {
           remoteDummyRef.current[key]!.x = x
           remoteDummyRef.current[key]!.y = y
           remoteDummyRef.current[key]!.z = z
+          remoteDummyRef.current[key]?.lookAt({ x, y, z })
         }
         return
       }
@@ -251,16 +264,17 @@ export default (): JSX.Element => {
     // 键盘WASD控制
     keyboard.onKeyPress = (_, keys) => {
       const dummy = dummyRef.current
+      const speed = 2.4
       if (!dummy) return
 
       if (keys.has('w')) {
-        dummy.strideForward = -1
+        dummy.strideForward = -speed
       } else if (keys.has('s')) {
-        dummy.strideForward = 1
+        dummy.strideForward = speed
       } else if (keys.has('a')) {
-        dummy.strideRight = 1
+        dummy.strideRight = speed
       } else if (keys.has('d')) {
-        dummy.strideRight = -1
+        dummy.strideRight = -speed
       } else {
         dummy.strideForward = 0
         dummy.strideRight = 0
@@ -324,7 +338,7 @@ export default (): JSX.Element => {
       Object.keys(walking).forEach((key) => {
         if (!walking[key]) return
         const dummy = remoteDummyRef.current[key]
-        dummy?.moveForward(-1)
+        dummy?.moveForward(-2.3)
       })
     },
     Object.values(walking).some((walk) => walk)
@@ -349,6 +363,12 @@ export default (): JSX.Element => {
     Object.values(players).some((player) => !player.connected)
   )
 
+  useLoop(() => {
+    if (!cameraRef.current || !nameRef.current) return
+    nameRef.current.lookAt(cameraRef.current)
+    Object.values(remoteNameRef.current).forEach(remoteName => remoteName?.lookAt(cameraRef.current!))
+  }, true)
+
   return (
     <>
       {progress < 100 ? (
@@ -358,14 +378,20 @@ export default (): JSX.Element => {
           defaultLight={path('env.hdr')}
           skybox={path('env.hdr')}
           bloom
-          // bloomStrength={0.3}
+          // bloomStrength={0.2}
           bloomRadius={1}
           bloomThreshold={0.8}
-          repulsion={1}
+          // repulsion={1}
+          outlineColor="gold"
+          outlineHiddenColor="white"
+          outlinePulse={1000}
         >
           {/* gallery model */}
           {/* 艺术馆模型 */}
-          <Model src={path('galleryBK.glb')} scale={20} physics="map">
+          <Model
+            metalnessFactor={-1.1}
+            onClick={e => console.log(e.point)}
+            roughnessFactor={1.5} src={path('galleryBK.glb')} scale={10} physics="map">
             {/* find the artwork of name "a6_CRN.a6_0" */}
             {/* 找到名称为 "a6_CRN.a6_0" 的艺术品 */}
             {NFTS.map((nft, index) => (
@@ -398,6 +424,7 @@ export default (): JSX.Element => {
           </Model>
 
           <ThirdPersonCamera
+            ref={cameraRef}
             mouseControl
             active
             innerY={ySpring}
@@ -405,14 +432,18 @@ export default (): JSX.Element => {
             innerX={xSpring}
             fov={fov}
             lockTargetRotation="dynamic-lock"
+           
           >
             <Dummy
               ref={dummyRef}
               physics="character"
-              x={1410.34}
-              y={initZ}
-              z={1938.77}
-              lookAt={[2336.63, initZ, 1712.93]}
+              x={initX}
+              y={initY}
+              z={initZ}
+              width={15}
+              height={65}
+              scale={2}
+              lookAt={[8000, 0, 0]}
               roughnessFactor={0}
               metalnessFactor={0.3}
               src={path('kazama.fbx')}
@@ -422,9 +453,9 @@ export default (): JSX.Element => {
               }}
               strideMove
             >
-              <HTML>
-                <div className="player_name">{nickname}</div>
-              </HTML>
+              <HTMLMesh ref={nameRef} y={42} scale={0.6} >
+                <p style={{ fontSize: '12px' }}>{nickname}</p>
+              </HTMLMesh>
             </Dummy>
           </ThirdPersonCamera>
           {/* 其他玩家 */}
@@ -436,9 +467,12 @@ export default (): JSX.Element => {
                   key={key}
                   ref={(el) => (remoteDummyRef.current[key] = el)}
                   physics="character"
-                  x={1410.34}
-                  y={-800}
-                  z={1938.77}
+                  x={initX}
+                  y={initY}
+                  z={initZ}
+                  width={15}
+                  height={65}
+                  scale={2}
                   roughnessFactor={0}
                   metalnessFactor={0.3}
                   animation={walking[key] ? 'walking' : 'idle'}
@@ -452,7 +486,6 @@ export default (): JSX.Element => {
                   }}
                 >
                   <HTML>
-                    <div className="player_name">{play.name}</div>
                     {talking[key] && <VolumeUp className="player_talk" />}
                     <audio
                       style={{
@@ -464,6 +497,9 @@ export default (): JSX.Element => {
                       autoPlay
                     ></audio>
                   </HTML>
+                  <HTMLMesh ref={(el) => remoteNameRef.current[key] = el} y={42} scale={0.6} >
+                    <p style={{ fontSize: '12px' }}>{play.name}</p>
+                  </HTMLMesh>
                 </Dummy>
               )
             } else {
@@ -479,7 +515,7 @@ export default (): JSX.Element => {
                 key={key}
                 id={`cursor-${key}`}
                 visible={false}
-                scale={0.5}
+                scale={0.1}
                 x={connected ? position[key].x : 0}
                 y={connected ? position[key].y : 0}
                 z={connected ? position[key].z : 0}
