@@ -7,12 +7,14 @@ interface Dialog {
   streamOpen: boolean
   metaOpen: boolean
   roomOpen: boolean
+  nftOpen: boolean
 }
 
 const initialState: Dialog = {
   streamOpen: false,
   metaOpen: false,
   roomOpen: false,
+  nftOpen: false,
 }
 
 const dialog = createSlice({
@@ -24,6 +26,9 @@ const dialog = createSlice({
     },
     setRoom(state, { payload }: PayloadAction<boolean>) {
       state.roomOpen = payload
+    },
+    setNft(state, { payload }: PayloadAction<boolean>) {
+      state.nftOpen = payload
     },
   },
   extraReducers(builder) {
@@ -42,5 +47,5 @@ const dialog = createSlice({
     })
   },
 })
-export const { setMeta, setRoom } = dialog.actions
+export const { setMeta, setRoom, setNft } = dialog.actions
 export default dialog.reducer

@@ -22,7 +22,7 @@ import { useAppSelector, useAppDispatch } from '@store/index'
 import { setLocal } from '@store/modules/local'
 import { setDialogOpen } from '@store/modules/wallet'
 import { setDialogOpen as registerOpen } from '@store/modules/user'
-import { setRoom } from '@store/modules/dialog'
+import { setRoom, setNft } from '@store/modules/dialog'
 
 export default (): JSX.Element => {
   const { headerImg, nickname, isCW, isLogin } = useAppSelector(
@@ -80,6 +80,13 @@ export default (): JSX.Element => {
           {isCW ? (
             isLogin ? (
               <>
+                <Button
+                  color="primary"
+                  sx={{ mr: 2 }}
+                  onClick={() => dispatch(setNft(true))}
+                >
+                  nft
+                </Button>
                 <Button
                   color="primary"
                   sx={{ mr: 2 }}

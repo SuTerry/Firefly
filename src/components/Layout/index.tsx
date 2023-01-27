@@ -10,6 +10,8 @@ import { useAppSelector } from '@store/index'
 
 const Sider = lazy(() => import('@components/Sider'))
 
+const Dialog = lazy(() => import('@components/Dialog'))
+
 export default (): JSX.Element => {
   const { isHeader, isSider } = useAppSelector((state) => state.router)
 
@@ -30,6 +32,9 @@ export default (): JSX.Element => {
           <Outlet />
         </Box>
       </Box>
+      <Suspense>
+        <Dialog />
+      </Suspense>
     </Box>
   )
 }

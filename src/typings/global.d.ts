@@ -7,7 +7,7 @@ interface SASTParams {
       methodName: string
       args?: Record<sting, unknown>
       gas?: number
-      deposit?: number
+      deposit?: string
     }[]
 }
 interface SASTResult {

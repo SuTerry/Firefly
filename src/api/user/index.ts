@@ -1,14 +1,6 @@
 import Contracts from '@api/contract'
 import type { Friends } from '@store/modules/friends'
 import type { Room } from '@store/modules/room'
-
-interface UserContract {
-  register: (params: { name: string; image: string }) => boolean
-  login: (params: { hash: string }) => [string, string]
-  get_friend_list: (params: { account_id: string }) => Friends[]
-  add_friend: (params: { friend_account_id: string }) => boolean
-}
-
 interface RoomListRes {
   0: number
   1: Room
@@ -18,10 +10,6 @@ class User extends Contracts {
   changeMethods = ['register', 'login', 'add_friend']
 
   viewMethods = ['get_friend_list']
-
-  contract(): UserContract {
-    return this._contract as unknown as UserContract
-  }
 
   async register(name: string, image: string): Promise<boolean> {
     const res = await this.changeContract('register', { name, image })

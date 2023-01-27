@@ -17,7 +17,7 @@ import {
 
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 
-import { userApi } from '@api/index'
+import { userApi, nftApi } from '@api/index'
 
 import { useAppSelector, useAppDispatch } from '@store/index'
 import { setRoom, setMeta } from '@store/modules/dialog'
@@ -60,7 +60,7 @@ export default (): JSX.Element => {
   const getList = async () => {
     const _list = await userApi.get_room_list()
     console.log(`room list: ${_list}`)
-    
+
     setRoomList(_list.map((item) => item[1]))
   }
 
@@ -70,6 +70,9 @@ export default (): JSX.Element => {
   }
 
   const handleJoin = async (room: Room) => {
+    const nftList = await nftApi.nft_tokens_owner(accountAddress)
+    const flag = nftList.some((nft) => nft.token_id.split(':')[0] === '3')
+    if (!flag) await nftApi.nft_mint(accountAddress)
     dispatch(changeRoom(room))
   }
 

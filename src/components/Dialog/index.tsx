@@ -5,6 +5,7 @@ import Wallte from './Wallte'
 import Register from './Register'
 import Meta from './Meta'
 import Room from './Room'
+import Nft from './Nft'
 
 export default (): JSX.Element => {
   return (
@@ -15,6 +16,7 @@ export default (): JSX.Element => {
       <Register />
       <Meta />
       <Room />
+      <Nft />
     </>
   )
 }

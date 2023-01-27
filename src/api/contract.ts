@@ -19,7 +19,8 @@ export default class Contracts {
 
   protected async senderChangeMethod(
     methodName: string,
-    args?: Record<string, unknown>
+    args?: Record<string, unknown>,
+    deposit?: string
   ): Promise<string> {
     const tx = {
       receiverId: this.address,
@@ -27,6 +28,7 @@ export default class Contracts {
         {
           methodName,
           args,
+          deposit
         },
       ],
     }
@@ -59,12 +61,13 @@ export default class Contracts {
 
   protected async changeContract(
     methodName: string,
-    args?: Record<string, unknown>
+    args?: Record<string, unknown>,
+    deposit?: string
   ): Promise<string> {
     const { currentWallet } = store.getState().wallet
     switch (currentWallet) {
       case 'Sender':
-        return this.senderChangeMethod(methodName, args)
+        return this.senderChangeMethod(methodName, args, deposit)
       default:
         throw Error()
     }
@@ -72,7 +75,7 @@ export default class Contracts {
 
   protected async viewContract<T>(
     methodName: string,
-    args?: Record<string, unknown>
+    args?: Record<string, unknown>,
   ): Promise<T> {
     const { currentWallet } = store.getState().wallet
     switch (currentWallet) {
