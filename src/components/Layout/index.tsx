@@ -4,9 +4,11 @@ import { Outlet } from 'react-router-dom'
 
 import { Box } from '@mui/material'
 
-import Header from '@components/Header'
+import signaling from '@hooks/signaling'
 
 import { useAppSelector } from '@store/index'
+
+import Header from '@components/Header'
 
 const Sider = lazy(() => import('@components/Sider'))
 
@@ -14,6 +16,8 @@ const Dialog = lazy(() => import('@components/Dialog'))
 
 export default (): JSX.Element => {
   const { isHeader, isSider } = useAppSelector((state) => state.router)
+
+  signaling()
 
   return (
     <Box

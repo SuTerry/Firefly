@@ -19,7 +19,7 @@ export default ({ children }: IProps): JSX.Element => {
   const dispatch = useAppDispatch()
 
   const { initWallet } = useAppSelector((state) => state.wallet)
-  const { isCW, isLogin } = useAppSelector((store) => store.user)
+  const { isCW } = useAppSelector((store) => store.user)
 
   useEffect(() => {
     const routeRule = findRouterRule(location.pathname)
@@ -33,12 +33,7 @@ export default ({ children }: IProps): JSX.Element => {
       {name && initWallet ? (
         isConnect ? (
           isCW ? (
-            isLogin || location.pathname === '/login' ? (
-              children
-            ) : (
-              <Navigate to="/login" />
-              // children
-            )
+            children
           ) : (
             <Navigate to="/connect" />
           )
