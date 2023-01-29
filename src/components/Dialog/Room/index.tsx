@@ -17,13 +17,14 @@ import {
 
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 
-import { userApi, nftApi } from '@api/index'
+import { userApi } from '@api/index'
 
 import { useAppSelector, useAppDispatch } from '@store/index'
 import { setRoom, setMeta } from '@store/modules/dialog'
 import { changeRoom } from '@store/modules/room'
 
 import CreateRoom from './CreateRoom'
+import SendNft from './SendNft'
 
 import type { TransitionProps } from '@mui/material/transitions'
 import type { Room } from '@store/modules/room'
@@ -55,6 +56,7 @@ export default (): JSX.Element => {
   const dispatch = useAppDispatch()
 
   const [open, setOpen] = useState(false)
+  const [openNft, setOpenNft] = useState(false)
   const [roomList, setRoomList] = useState<Room[]>([])
 
   const getList = async () => {
@@ -70,9 +72,6 @@ export default (): JSX.Element => {
   }
 
   const handleJoin = async (room: Room) => {
-    const nftList = await nftApi.nft_tokens_owner(accountAddress)
-    const flag = nftList.some((nft) => nft.token_id.split(':')[0] === '3')
-    if (!flag) await nftApi.nft_mint(accountAddress)
     dispatch(changeRoom(room))
   }
 
@@ -114,7 +113,7 @@ export default (): JSX.Element => {
           }}
         >
           {roomList.map((room) => (
-            <Card key={room.id} sx={{ width: 260, height: 120, ml: 5, mb: 5 }}>
+            <Card key={room.id} sx={{ width: 300, height: 120, ml: 5, mb: 5 }}>
               <CardContent>
                 <Typography variant="h5" component="div">
                   {room.name}
@@ -125,13 +124,21 @@ export default (): JSX.Element => {
                   Join in
                 </Button>
                 {accountAddress === room.owner && (
-                  <Button
-                    color="error"
-                    size="small"
-                    onClick={() => handleRemoveRoom(room.id)}
-                  >
-                    Remove Room
-                  </Button>
+                  <>
+                    <Button
+                      color="error"
+                      size="small"
+                      onClick={() => handleRemoveRoom(room.id)}
+                    >
+                      Remove Room
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() => setOpenNft(true)}
+                    >
+                      Send NFT
+                    </Button>
+                  </>
                 )}
               </CardActions>
             </Card>
@@ -149,6 +156,7 @@ export default (): JSX.Element => {
         </DialogContent>
       </Dialog>
       <CreateRoom open={open} setOpen={setOpen} />
+      <SendNft open={openNft} setOpen={setOpenNft} />
     </ThemeProvider>
   )
 }

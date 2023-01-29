@@ -28,9 +28,21 @@ export default class Contracts {
         {
           methodName,
           args,
-          deposit
+          deposit,
         },
       ],
+    }
+
+    const res = await window.near!.signAndSendTransaction(tx)
+
+    return window.atob(res.response[0].status.SuccessValue)
+  }
+  protected async senderChangeMethods(
+    actions: SASTParamsActions[]
+  ): Promise<string> {
+    const tx = {
+      receiverId: this.address,
+      actions,
     }
 
     const res = await window.near!.signAndSendTransaction(tx)
@@ -73,9 +85,21 @@ export default class Contracts {
     }
   }
 
+  protected async changeContracts(
+    actions: SASTParamsActions[]
+  ): Promise<string> {
+    const { currentWallet } = store.getState().wallet
+    switch (currentWallet) {
+      case 'Sender':
+        return this.senderChangeMethods(actions)
+      default:
+        throw Error()
+    }
+  }
+
   protected async viewContract<T>(
     methodName: string,
-    args?: Record<string, unknown>,
+    args?: Record<string, unknown>
   ): Promise<T> {
     const { currentWallet } = store.getState().wallet
     switch (currentWallet) {

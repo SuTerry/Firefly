@@ -1,14 +1,15 @@
 type EventName = 'accountChanged' | 'rpcChanged' | 'signOut'
 
+interface SASTParamsActions {
+  methodName: string
+  args?: Record<sting, unknown>
+  gas?: number
+  deposit?: string
+}
+
 interface SASTParams {
   receiverId: string
-  actions: 
-    {
-      methodName: string
-      args?: Record<sting, unknown>
-      gas?: number
-      deposit?: string
-    }[]
+  actions: SASTParamsActions[]
 }
 interface SASTResult {
   response: [
@@ -21,9 +22,12 @@ interface SASTResult {
 }
 
 interface Account {
-  viewFunction: <T>(contractId: string, methodName: string, args?: Record<sting, unknown>) => Promise<T>
+  viewFunction: <T>(
+    contractId: string,
+    methodName: string,
+    args?: Record<sting, unknown>
+  ) => Promise<T>
 }
-
 
 interface Window {
   near?: {
