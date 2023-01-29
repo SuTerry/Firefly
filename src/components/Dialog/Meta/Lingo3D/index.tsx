@@ -31,7 +31,11 @@ import { STATIC } from '@api/config'
 
 import { getImgWH } from '@utils/index'
 
-import type { Dummy as GameDummy, ThirdPersonCamera as GameThirdPersonCamera, HTMLMesh as GameHTMLMesh } from 'lingo3d'
+import type {
+  Dummy as GameDummy,
+  ThirdPersonCamera as GameThirdPersonCamera,
+  HTMLMesh as GameHTMLMesh,
+} from 'lingo3d'
 
 import './index.less'
 
@@ -55,14 +59,19 @@ interface Player extends Play {
 export default (): JSX.Element => {
   let timer: NodeJS.Timeout | undefined
 
+  const modules = ['kazama.fbx', 'ARASHI.fbx', 'AYA.fbx']
+
   const progress = usePreload(
     [
       path('env.hdr'),
       path('galleryBK.glb'),
       path('kazama.fbx'),
+      path('ARASHI.fbx'),
+      path('AYA.fbx'),
       path('Idle.fbx'),
+      path('Walking.fbx'),
     ],
-    '23.2mb'
+    '30.9mb'
   )
 
   const { enqueueSnackbar } = useSnackbar()
@@ -76,6 +85,7 @@ export default (): JSX.Element => {
 
   const { discovery, roomOffer, roomAnswer } = useNews()
 
+  const [count, setCount] = useState<number>(0)
   const [position, setPosition] = useState<Record<string, Position>>({})
   const [walking, setWalking] = useState<Record<string, boolean>>({})
   const [players, setPlayers] = useState<Record<string, Player>>({})
@@ -125,7 +135,6 @@ export default (): JSX.Element => {
       _walking[key] = false
       setWalking(_walking)
     }, 300)
-
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -211,7 +220,7 @@ export default (): JSX.Element => {
         }
 
         const { x, y, z } = play.initPosition || { x: 0, y: 0, z: 0 }
-        if (x !== 0 && x !== 860 &&  !!remoteDummyRef.current[key]) {
+        if (x !== 0 && x !== 860 && !!remoteDummyRef.current[key]) {
           remoteDummyRef.current[key]!.x = x
           remoteDummyRef.current[key]!.y = y
           remoteDummyRef.current[key]!.z = z
@@ -261,6 +270,7 @@ export default (): JSX.Element => {
   }, [playes])
 
   useEffect(() => {
+    let _count = 0
     // 键盘WASD控制
     keyboard.onKeyPress = (_, keys) => {
       const dummy = dummyRef.current
@@ -299,6 +309,7 @@ export default (): JSX.Element => {
     }
 
     Object.keys(players).forEach((key) => {
+      if (players[key].identity === 'answer') _count += 1
       if (!players[key].connected) return
 
       // 接收其他玩家移动位置
@@ -330,6 +341,8 @@ export default (): JSX.Element => {
         }
       }
     })
+
+    setCount(_count)
   }, [players])
 
   // 其他玩家移动帧
@@ -366,7 +379,9 @@ export default (): JSX.Element => {
   useLoop(() => {
     if (!cameraRef.current || !nameRef.current) return
     nameRef.current.lookAt(cameraRef.current)
-    Object.values(remoteNameRef.current).forEach(remoteName => remoteName?.lookAt(cameraRef.current!))
+    Object.values(remoteNameRef.current).forEach((remoteName) =>
+      remoteName?.lookAt(cameraRef.current!)
+    )
   }, true)
 
   return (
@@ -390,8 +405,12 @@ export default (): JSX.Element => {
           {/* 艺术馆模型 */}
           <Model
             metalnessFactor={-1.1}
-            onClick={e => console.log(e.point)}
-            roughnessFactor={1.5} src={path('galleryBK.glb')} scale={10} physics="map">
+            onClick={(e) => console.log(e.point)}
+            roughnessFactor={1.5}
+            src={path('galleryBK.glb')}
+            scale={10}
+            physics="map"
+          >
             {/* find the artwork of name "a6_CRN.a6_0" */}
             {/* 找到名称为 "a6_CRN.a6_0" 的艺术品 */}
             {NFTS.map((nft, index) => (
@@ -432,7 +451,6 @@ export default (): JSX.Element => {
             innerX={xSpring}
             fov={fov}
             lockTargetRotation="dynamic-lock"
-           
           >
             <Dummy
               ref={dummyRef}
@@ -446,21 +464,23 @@ export default (): JSX.Element => {
               lookAt={[8000, 0, 0]}
               roughnessFactor={0}
               metalnessFactor={0.3}
-              src={path('kazama.fbx')}
+              // src={path('kazama.fbx')}
+              src={path(modules[count])}
               animations={{
                 idle: path('Idle.fbx'),
                 running: path('Walking.fbx'),
               }}
               strideMove
             >
-              <HTMLMesh ref={nameRef} y={42} scale={0.6} >
+              <HTMLMesh ref={nameRef} y={42} scale={0.6}>
                 <p style={{ fontSize: '12px' }}>{nickname}</p>
               </HTMLMesh>
             </Dummy>
           </ThirdPersonCamera>
           {/* 其他玩家 */}
-          {Object.keys(playes).map((key) => {
+          {Object.keys(playes).map((key, index) => {
             const play = playes[key]
+            const _count = index < count ? index : index + 1
             if (play.pc.connectionState === 'connected') {
               return (
                 <Dummy
@@ -479,7 +499,8 @@ export default (): JSX.Element => {
                   strideMove
                   intersectIds={[`cursor-${key}`]}
                   onIntersect={() => handleIntersect(key)}
-                  src={path('kazama.fbx')}
+                  // src={path('kazama.fbx')}
+                  src={path(modules[_count])}
                   animations={{
                     idle: path('Idle.fbx'),
                     walking: path('Walking.fbx'),
@@ -497,7 +518,11 @@ export default (): JSX.Element => {
                       autoPlay
                     ></audio>
                   </HTML>
-                  <HTMLMesh ref={(el) => remoteNameRef.current[key] = el} y={42} scale={0.6} >
+                  <HTMLMesh
+                    ref={(el) => (remoteNameRef.current[key] = el)}
+                    y={42}
+                    scale={0.6}
+                  >
                     <p style={{ fontSize: '12px' }}>{play.name}</p>
                   </HTMLMesh>
                 </Dummy>

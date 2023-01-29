@@ -12,16 +12,16 @@ export interface Token {
 class Nft extends Contracts {
   address = NFT_CONTRACTID
 
-  async nft_mint(receiver_id: string): Promise<boolean> {
-    const token_series_id = '3'
-    const res = await this.changeContract(
-      'nft_mint',
-      {
-        token_series_id,
-        receiver_id,
-      },
-      '100000000000000000000000'
-    )
+  async nft_mint(receiver_ids: string[]): Promise<boolean> {
+    const methodName = 'nft_mint'
+    const token_series_id = '1'
+    const deposit = '100000000000000000000000'
+    const actions = receiver_ids.map((receiver_id) => ({
+      methodName,
+      args: { token_series_id, receiver_id },
+      deposit,
+    }))
+    const res = await this.changeContracts(actions)
     return JSON.parse(res)
   }
 
