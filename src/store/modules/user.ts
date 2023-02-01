@@ -3,6 +3,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { initWallet, connectWallet, disconnectWallet } from './wallet'
 
 import { Libp2p } from 'libp2p'
+import { Socket } from 'socket.io-client'
 
 interface User {
   headerImg: string
@@ -13,6 +14,7 @@ interface User {
   dialogOpen: boolean
   isVideo: boolean
   isAudio: boolean
+  socket?: Socket
 }
 
 interface SerUser {
@@ -29,13 +31,17 @@ const initialState: User = {
   dialogOpen: false,
   isVideo: false,
   isAudio: false,
+  socket: undefined,
 }
 const user = createSlice({
   name: 'user',
   initialState,
   reducers: {
     setUser(state, { payload }: PayloadAction<SerUser>) {
-      state = Object.assign(state, payload, { dialogOpen: false })
+      state = Object.assign(state, payload, {
+        dialogOpen: false,
+        isLogin: true,
+      })
     },
     setDialogOpen(state, { payload }: PayloadAction<boolean>) {
       state = Object.assign(state, { dialogOpen: payload })
@@ -45,6 +51,9 @@ const user = createSlice({
     },
     setAudio(state, { payload }: PayloadAction<boolean>) {
       state = Object.assign(state, { isAudio: payload })
+    },
+    setSocket(state, { payload }: PayloadAction<Socket>) {
+      state = Object.assign(state, { socket: payload })
     },
   },
   extraReducers(builder) {
@@ -65,5 +74,5 @@ const user = createSlice({
     })
   },
 })
-export const { setUser, setDialogOpen, login, setAudio } = user.actions
+export const { setUser, setDialogOpen, login, setAudio, setSocket } = user.actions
 export default user.reducer

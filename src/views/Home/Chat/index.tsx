@@ -15,10 +15,12 @@ interface ChatProps {
 }
 
 export default ({ friend }: ChatProps): JSX.Element => {
+  
   const local = langHook()
 
   const { Talk, self } = talk(friend)
 
+  
   return (
     <Box
       sx={{
@@ -28,8 +30,7 @@ export default ({ friend }: ChatProps): JSX.Element => {
       }}
     >
       <Talk />
-      {friend.peerId ? (
-        // {friend.name ? (
+      {friend.connected ? (
         <Operate self={self} friend={friend} />
       ) : (
         <Box sx={{ height: 240 }}>

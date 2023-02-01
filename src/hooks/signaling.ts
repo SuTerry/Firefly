@@ -1,47 +1,168 @@
+import { useEffect, useRef } from 'react'
+
 import { io } from 'socket.io-client'
 
+import { useAppSelector, useAppDispatch } from '@store/index'
+import { setSocket } from '@store/modules/user'
+import { setFriends, setFriend, initFriend } from '@store/modules/friends'
+import {
+  setOfferRequest,
+  initWebRTCState,
+  setOfferRemote,
+  setCandidate,
+} from '@store/modules/webRTC'
+
+import {
+  setRoomCandidate,
+  creatRoomAnswer,
+  setRoomOfferRemote,
+} from '@store/modules/room'
+
+import { WEBSOCKET } from '@api/config'
+
+import { answer, offerRemote, dataChannelMessage } from '@utils/webRTC'
+
 export default (): void => {
-  const name = new Date().getTime().toString()
-  console.log(name, 'name')
+  const { accountAddress } = useAppSelector((store) => store.wallet)
+  const { friends } = useAppSelector((store) => store.friends)
+  const webRTC = useAppSelector((store) => store.webRTC)
 
-  const socket = io('//localhost:8888', {
-    query: {
-      name,
-    },
-  })
+  const dispatch = useAppDispatch()
 
-  socket.emit('login', { name })
+  const friendsRef = useRef(friends)
+  const webRTCRef = useRef(webRTC)
 
-  socket.on('login', (msg) => {
-    console.log(msg, 'login')
-  })
-  socket.on('close', (msg) => {
-    console.log(msg, 'close')
-  })
+  useEffect(() => {
+    const socket = io(WEBSOCKET, {
+      query: {
+        key: accountAddress,
+      },
+    })
 
-  // socket.on('connect', () => {
+    dispatch(setSocket(socket))
 
-  // })
+    socket.on('friend', (msg) => {
+      const _friends = [...friendsRef.current]
+      _friends.push({ ...msg, online: true, connected: false })
+      dispatch(setFriends(_friends))
+    })
 
-  window.addEventListener('unload', () => {
-    socket.disconnect()
-  })
+    socket.on('offer', async ({ offer, type, media, isMeta, from, play }) => {
+      const _friends = [...friendsRef.current]
+      const friend = _friends.find((friend) => friend.account_id === from)
+      if (type === 'friend') {
+        if (!friend) return
+        const { pc } = await answer({ offer, media })
+        // set friends
+        dispatch(setFriend({ account_id: friend.account_id, pc }))
 
-  // const socket = new WebSocket('ws://localhost:8888')
+        pc.ondatachannel = (event) => {
+          const dataChannel = event.channel
+          dataChannelMessage(dataChannel, dispatch, friend.account_id)
+          dispatch(
+            setFriend({
+              account_id: friend.account_id,
+              dataChannel,
+              connected: true,
+            })
+          )
+        }
+        // send answer
+        socket?.emit('answer', {
+          type: 'friend',
+          answer: pc.localDescription,
+          toId: friend.account_id,
+        })
+        pc.onicecandidate = (event) => {
+          if (event.candidate)
+            socket?.emit('candidate', {
+              type: 'friend',
+              candidate: event.candidate,
+              toId: friend.account_id,
+            })
+        }
+      } else if (type === 'media') {
+        if (!friend) return
+        if (webRTCRef.current.isUse) {
+          // send close
+          socket?.emit('close', {
+            type: 'media',
+            toId: friend.account_id,
+          })
+        } else {
+          dispatch(setOfferRequest({ friend, media, offer, isMeta }))
+        }
+      } else if (type === 'room') {
+        dispatch(creatRoomAnswer({ offer, play }))
+      }
+    })
 
-  // socket.onopen = (e) => {
-  //   const data = {
-  //     type: 'login',
-  //     name: new Date().getTime().toString(),
-  //   }
-  //   socket.send(JSON.stringify(data))
-  // }
+    socket.on('answer', async ({ answer, type, from }) => {
+      const _friends = [...friendsRef.current]
+      const friend = _friends.find((friend) => friend.account_id === from)
+      if (type === 'friend') {
+        if (!friend) return
+        const { pc } = await offerRemote({ pc: friend.pc!, answer })
+        dispatch(
+          setFriend({ account_id: friend.account_id, pc, connected: true })
+        )
+      } else if (type === 'media') {
+        if (!friend) return
+        dispatch(setOfferRemote(answer))
+      } else if (type === 'room') {
+        dispatch(setRoomOfferRemote(answer))
+      }
+    })
 
-  // socket.onmessage = (e) => {
-  //   console.log(JSON.parse(e.data), 'e.data')
-  // }
+    socket.on('candidate', ({ candidate, type, from }) => {
+      const _friends = [...friendsRef.current]
+      const friend = _friends.find((friend) => friend.account_id === from)
+      if (type === 'friend') {
+        if (!friend) return
+        dispatch(setFriend({ account_id: friend.account_id, candidate }))
+      } else if (type === 'media') {
+        if (!friend) return
+        dispatch(setCandidate(candidate))
+      } else if (type === 'room') {
+        dispatch(setRoomCandidate([from, candidate]))
+      }
+    })
 
-  // setTimeout(() => {
-  //   socket.close()
-  // }, 5000)
+    socket.on('close', ({ type }) => {
+      if (type === 'media') {
+        dispatch(initWebRTCState())
+      }
+    })
+
+    socket.on('leave', (id) => {
+      const friend = friendsRef.current.find(
+        (friend) => friend.account_id === id
+      )
+
+      if (!friend) return
+      const _friends = { ...friend }
+      // friends
+      _friends.pc?.close()
+      _friends.pc = undefined
+      _friends.candidate = undefined
+      _friends.dataChannel = undefined
+      _friends.online = false
+      _friends.connected = false
+      dispatch(initFriend(_friends))
+
+      if (webRTCRef.current.isUse) dispatch(initWebRTCState())
+    })
+
+    window.addEventListener('unload', () => {
+      socket.disconnect()
+    })
+  }, [])
+
+  useEffect(() => {
+    friendsRef.current = friends
+  }, [friends])
+
+  useEffect(() => {
+    webRTCRef.current = webRTC
+  }, [webRTC])
 }

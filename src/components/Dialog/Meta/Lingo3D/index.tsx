@@ -20,16 +20,20 @@ import {
 
 import { useSnackbar } from 'notistack'
 
-import useNews from '@hooks/newsHook'
-
 import { useAppSelector, useAppDispatch } from '@store/index'
-import { setAnswerChannel, Play, removePlay } from '@store/modules/room'
+import {
+  setAnswerChannel,
+  Play,
+  removePlay,
+  addPlay,
+} from '@store/modules/room'
 
 import { NFTS } from '@constants/exhibition'
 
 import { STATIC } from '@api/config'
 
 import { getImgWH } from '@utils/index'
+import { offer } from '@utils/webRTC'
 
 import type {
   Dummy as GameDummy,
@@ -45,6 +49,7 @@ const path = (name: string): string => `${STATIC}/model/${name}`
 const initX = 860
 const initY = -360
 const initZ = 994
+const fbxs = ['kazama.fbx', 'ARASHI.fbx', 'AYA.fbx']
 
 interface Position {
   x: number
@@ -59,7 +64,7 @@ interface Player extends Play {
 export default (): JSX.Element => {
   let timer: NodeJS.Timeout | undefined
 
-  const modules = ['kazama.fbx', 'ARASHI.fbx', 'AYA.fbx']
+  const modules = [...fbxs, ...fbxs, ...fbxs, ...fbxs, ...fbxs]
 
   const progress = usePreload(
     [
@@ -76,14 +81,11 @@ export default (): JSX.Element => {
 
   const { enqueueSnackbar } = useSnackbar()
 
-  const { nickname } = useAppSelector((store) => store.user)
-  const { playes, room } = useAppSelector((store) => store.room)
-  const { friends } = useAppSelector((store) => store.friends)
+  const { nickname, socket } = useAppSelector((store) => store.user)
+  const { playes, room, initPlays } = useAppSelector((store) => store.room)
   const { accountAddress } = useAppSelector((store) => store.wallet)
 
   const dispatch = useAppDispatch()
-
-  const { discovery, roomOffer, roomAnswer } = useNews()
 
   const [count, setCount] = useState<number>(0)
   const [position, setPosition] = useState<Record<string, Position>>({})
@@ -183,7 +185,7 @@ export default (): JSX.Element => {
 
   useEffect(() => {
     if (!room) return
-    // 加载nft
+    // nft
     NFTS.forEach(async (nft, index) => {
       const url = room.nft[index]
       const [width, height] = await getImgWH(url)
@@ -192,82 +194,46 @@ export default (): JSX.Element => {
       nft.height = height
     })
 
-    // 加入好友
-    friends.forEach((friend) => {
-      if (!friend.peerId) return
-      console.log(`discovery: ${friend.name}`)
-      discovery(friend)
+    console.log(initPlays, 'initPlays')
+
+    // join online play
+    initPlays.forEach(async (play) => {
+      const media = { video: false, audio: true }
+      const isMeta = true
+      const toId = play.id
+      const type = 'room'
+
+      const { pc, dataChannel, localStream } = await offer({ media, isMeta })
+      const _play: Play = {
+        ...play,
+        identity: 'offer',
+        pc,
+        dataChannel,
+        localStream: localStream!,
+        audioContext: new AudioContext(),
+        stream: undefined,
+      }
+      dispatch(addPlay(_play))
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate)
+          socket?.emit('candidate', {
+            type,
+            candidate: event.candidate,
+            toId,
+          })
+      }
+
+      socket?.emit('offer', {
+        offer: pc.localDescription,
+        toId,
+        type,
+        media,
+        isMeta,
+        play: _play,
+      })
     })
   }, [])
-
-  useEffect(() => {
-    const keys = Object.keys(playes)
-    const _players = { ...players }
-    let update = false
-    keys.forEach((key) => {
-      const play = playes[key]
-
-      if (_players.hasOwnProperty(key)) {
-        // stream
-        if (!_players[key].stream && play.stream) {
-          _players[key].stream = play.stream
-          update = true
-        }
-        // dataChannel
-        if (!_players[key].dataChannel && play.dataChannel) {
-          _players[key].dataChannel = play.dataChannel
-          update = true
-        }
-
-        const { x, y, z } = play.initPosition || { x: 0, y: 0, z: 0 }
-        if (x !== 0 && x !== 860 && !!remoteDummyRef.current[key]) {
-          remoteDummyRef.current[key]!.x = x
-          remoteDummyRef.current[key]!.y = y
-          remoteDummyRef.current[key]!.z = z
-          remoteDummyRef.current[key]?.lookAt({ x, y, z })
-        }
-        return
-      }
-
-      _players[key] = { ...play, connected: false }
-      update = true
-
-      // if (play.pc.connectionState !== 'connected') {
-      if (play.identity === 'offer') {
-        console.log(`send offer of ${play.name}`)
-        const { x, y, z } = dummyRef.current || { x: 0, y: 0, z: 0 }
-        roomOffer(play.friend, {
-          offer: play.pc?.localDescription,
-          position: { x, y, z },
-        })
-      } else {
-        console.log(`send answer of ${play.friend.name}`)
-        roomAnswer(play.friend, {
-          answer: play.pc?.localDescription,
-        })
-      }
-      play.pc.ondatachannel = (event) => {
-        const dataChannel = event.channel
-        if (!play.dataChannel) {
-          console.log(`create dataChannel of ${play.name}`)
-          dispatch(setAnswerChannel({ key, dataChannel }))
-        }
-      }
-
-      const _positions = { ...position }
-      _positions[key] = { x: 0, y: 0, z: 0 }
-      setPosition(_positions)
-      const _walking = { ...walking }
-      _walking[key] = false
-      setWalking(_walking)
-      const _talking = { ...talking }
-      _talking[key] = false
-      setTalking(_talking)
-      // }
-    })
-
-    if (update) setPlayers({ ..._players })
-  }, [playes])
 
   useEffect(() => {
     let _count = 0
@@ -308,20 +274,34 @@ export default (): JSX.Element => {
       })
     }
 
-    Object.keys(players).forEach((key) => {
-      if (players[key].identity === 'answer') _count += 1
-      if (!players[key].connected) return
-
-      // 接收其他玩家移动位置
-      if (playes[key]) {
-        console.log(playes[key].dataChannel, 'playes[key].dataChannel')
-        playes[key].dataChannel?.addEventListener('message', message)
+    const keys = Object.keys(playes)
+    keys.forEach((key) => {
+      const play = playes[key]
+      play.pc.ondatachannel = (event) => {
+        const dataChannel = event.channel
+        if (!play.dataChannel) dispatch(setAnswerChannel({ key, dataChannel }))
       }
 
+      if (play.dataChannel)
+        play.dataChannel.onmessage = message
+
+      const _positions = { ...position }
+      _positions[key] = { x: 0, y: 0, z: 0 }
+      setPosition(_positions)
+      const _walking = { ...walking }
+      _walking[key] = false
+      setWalking(_walking)
+      const _talking = { ...talking }
+      _talking[key] = false
+      setTalking(_talking)
+
+      if (play.identity === 'answer') _count += 1
+      if (play.pc.connectionState !== 'connected') return
+
+
       // 音频
-      if (remoteAudioRef.current[key] && playes[key]) {
-        const { stream, audioContext } = playes[key]
-        if (!stream) return
+      if (remoteAudioRef.current[key] && play.stream) {
+        const { stream, audioContext } = play
         remoteAudioRef.current[key]!.srcObject = stream
 
         // 音频收集
@@ -343,7 +323,152 @@ export default (): JSX.Element => {
     })
 
     setCount(_count)
-  }, [players])
+  }, [playes])
+
+  // useEffect(() => {
+  //   const keys = Object.keys(playes)
+  //   const _players = { ...players }
+  //   let update = false
+  //   keys.forEach((key) => {
+  //     const play = playes[key]
+
+  //     if (_players.hasOwnProperty(key)) {
+  //       // stream
+  //       if (!_players[key].stream && play.stream) {
+  //         _players[key].stream = play.stream
+  //         update = true
+  //       }
+  //       // dataChannel
+  //       if (!_players[key].dataChannel && play.dataChannel) {
+  //         _players[key].dataChannel = play.dataChannel
+  //         update = true
+  //       }
+
+  //       const { x, y, z } = play.initPosition || { x: 0, y: 0, z: 0 }
+  //       if (x !== 0 && x !== 860 && !!remoteDummyRef.current[key]) {
+  //         remoteDummyRef.current[key]!.x = x
+  //         remoteDummyRef.current[key]!.y = y
+  //         remoteDummyRef.current[key]!.z = z
+  //         remoteDummyRef.current[key]?.lookAt({ x, y, z })
+  //       }
+  //       return
+  //     }
+
+  //     _players[key] = { ...play, connected: false }
+  //     update = true
+
+  //     // if (play.pc.connectionState !== 'connected') {
+  //     if (play.identity === 'offer') {
+  //       console.log(`send offer of ${play.name}`)
+  //       const { x, y, z } = dummyRef.current || { x: 0, y: 0, z: 0 }
+  //       roomOffer(play.friend, {
+  //         offer: play.pc?.localDescription,
+  //         position: { x, y, z },
+  //       })
+  //     } else {
+  //       console.log(`send answer of ${play.friend.name}`)
+  //       roomAnswer(play.friend, {
+  //         answer: play.pc?.localDescription,
+  //       })
+  //     }
+  //     play.pc.ondatachannel = (event) => {
+  //       const dataChannel = event.channel
+  //       if (!play.dataChannel) {
+  //         console.log(`create dataChannel of ${play.name}`)
+  //         dispatch(setAnswerChannel({ key, dataChannel }))
+  //       }
+  //     }
+
+  //     const _positions = { ...position }
+  //     _positions[key] = { x: 0, y: 0, z: 0 }
+  //     setPosition(_positions)
+  //     const _walking = { ...walking }
+  //     _walking[key] = false
+  //     setWalking(_walking)
+  //     const _talking = { ...talking }
+  //     _talking[key] = false
+  //     setTalking(_talking)
+  //     // }
+  //   })
+
+  //   if (update) setPlayers({ ..._players })
+  // }, [playes])
+
+  // useEffect(() => {
+  //   let _count = 0
+  //   // 键盘WASD控制
+  //   keyboard.onKeyPress = (_, keys) => {
+  //     const dummy = dummyRef.current
+  //     const speed = 2.4
+  //     if (!dummy) return
+
+  //     if (keys.has('w')) {
+  //       dummy.strideForward = -speed
+  //     } else if (keys.has('s')) {
+  //       dummy.strideForward = speed
+  //     } else if (keys.has('a')) {
+  //       dummy.strideRight = speed
+  //     } else if (keys.has('d')) {
+  //       dummy.strideRight = -speed
+  //     } else {
+  //       dummy.strideForward = 0
+  //       dummy.strideRight = 0
+  //     }
+
+  //     const { x, y, z } = dummy
+
+  //     const data = {
+  //       type: 'position',
+  //       data: { x, y, z, key: accountAddress },
+  //     }
+  //     const value = JSON.stringify(data)
+  //     Object.keys(playes).forEach((key) => {
+  //       const play = playes[key]
+  //       console.log(`send ${play?.name} type ${data.type}`)
+  //       try {
+  //         if (play && players[key].connected) play.dataChannel?.send(value)
+  //       } catch (error) {
+  //         playOut(play.name, key)
+  //       }
+  //     })
+  //   }
+
+  //   Object.keys(players).forEach((key) => {
+  //     if (players[key].identity === 'answer') _count += 1
+  //     if (!players[key].connected) return
+
+  //     // 接收其他玩家移动位置
+  //     if (playes[key]) {
+  //       console.log(playes[key].dataChannel, 'playes[key].dataChannel')
+  //       playes[key].dataChannel?.addEventListener('message', message)
+  //     }
+
+  //     // 音频
+  //     if (remoteAudioRef.current[key] && playes[key]) {
+  //       const { stream, audioContext } = playes[key]
+  //       if (!stream) return
+  //       remoteAudioRef.current[key]!.srcObject = stream
+
+  //       // 音频收集
+  //       const mediaStreamSource = audioContext.createMediaStreamSource(stream)
+  //       const scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1)
+  //       mediaStreamSource.connect(scriptProcessor)
+  //       scriptProcessor.connect(audioContext.destination)
+  //       scriptProcessor.onaudioprocess = (e) => {
+  //         const buffer = e.inputBuffer.getChannelData(0)
+  //         // 获取缓冲区中最大的音量值
+  //         // eslint-disable-next-line prefer-spread
+  //         const maxVal = Math.max.apply(Math, buffer as unknown as number[])
+  //         // 显示音量值
+  //         const _talking = { ...talking }
+  //         _talking[key] = Math.ceil(maxVal * 100) > 10
+  //         setTalking({ ..._talking })
+  //       }
+  //     }
+  //   })
+
+  //   setCount(_count)
+  // }, [players])
 
   // 其他玩家移动帧
   useLoop(
@@ -465,7 +590,7 @@ export default (): JSX.Element => {
               roughnessFactor={0}
               metalnessFactor={0.3}
               // src={path('kazama.fbx')}
-              src={path(modules[count])}
+              src={path(modules[initPlays.length])}
               animations={{
                 idle: path('Idle.fbx'),
                 running: path('Walking.fbx'),

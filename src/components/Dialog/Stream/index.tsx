@@ -47,6 +47,8 @@ export default (): JSX.Element => {
     isVideo,
     localStream,
     isMeta,
+    dataChannel,
+    candidate
   } = useAppSelector((store) => store.webRTC)
 
   const dispatch = useAppDispatch()
@@ -64,7 +66,7 @@ export default (): JSX.Element => {
   }
 
   const isUse = isOffer || isAnswer
-  const connected = pc?.connectionState === 'connected'
+  const connected = pc && stream && dataChannel && candidate
 
   const createAudio = (friend: Friends) => (
     <>
@@ -91,7 +93,7 @@ export default (): JSX.Element => {
 
   useEffect(() => {
     if (!stream) return
-    if (pc?.connectionState !== 'connected') return
+    if (!connected) return
     if (isVideo) {
       videoRef.current!.srcObject = stream
       videoLocalRef.current!.srcObject = localStream!

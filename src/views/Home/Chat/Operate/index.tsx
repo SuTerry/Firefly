@@ -5,6 +5,8 @@ import { Box, Divider, IconButton, Stack } from '@mui/material'
 import { useAppSelector, useAppDispatch } from '@store/index'
 import { creatOffer } from '@store/modules/webRTC'
 
+import webrtcHook from './webrtcHook'
+
 import useNews from '@hooks/newsHook'
 
 import type { Friends } from '@store/modules/friends'
@@ -23,6 +25,8 @@ export default ({ self, friend }: Operate): JSX.Element => {
 
   const dispatch = useAppDispatch()
 
+  webrtcHook(friend.account_id)
+
   const { send } = useNews()
 
   const [text, setText] = useState('')
@@ -32,7 +36,7 @@ export default ({ self, friend }: Operate): JSX.Element => {
     event.preventDefault()
     const value = text.trim()
     if (value === '') return
-    send(value, friend)
+    send(value, friend.dataChannel!)
     self(value)
     setText('')
   }
@@ -54,7 +58,7 @@ export default ({ self, friend }: Operate): JSX.Element => {
 
   const creatStream = async (media: MediaStreamConstraints, isMeta = false) => {
     if (isUse) return
-    dispatch(creatOffer({ friend, media, isMeta }))
+    dispatch(creatOffer({ media, isMeta, friend }))
   }
 
   return (

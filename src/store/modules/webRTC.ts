@@ -19,6 +19,7 @@ export interface WebRTC {
   offer: RTCSessionDescription | undefined
   isVideo: boolean
   isMeta: boolean
+  candidate: RTCIceCandidateInit | undefined
 }
 
 interface OfferRequestParams {
@@ -38,6 +39,7 @@ const initialState: WebRTC = {
   isAnswer: false,
   media: undefined,
   dataChannel: undefined,
+  candidate: undefined,
   stream: undefined,
   offer: undefined,
   isVideo: false,
@@ -49,16 +51,16 @@ export const creatOffer = createAsyncThunk('weRTC/creatOffer', offer)
 export const creatAnswer = createAsyncThunk(
   'weRTC/creatAnswer',
   async (_, { getState }) => {
-    const { media, offer, friend } = (getState() as RootState).webRTC
-    return await answer({ offer: offer!, media: media!, friend: friend! })
+    const { media, offer } = (getState() as RootState).webRTC
+    return await answer({ offer: offer!, media: media! })
   }
 )
 
 export const setOfferRemote = createAsyncThunk(
   'weRTC/setOfferRemote',
   async (answer: RTCSessionDescription, { getState }) => {
-    const { pc, friend } = (getState() as RootState).webRTC
-    return await offerRemote({ pc: pc!, answer, friend: friend! })
+    const { pc } = (getState() as RootState).webRTC
+    return await offerRemote({ pc: pc!, answer })
   }
 )
 
@@ -85,6 +87,13 @@ const webRTC = createSlice({
       const { pc } = state
       state = Object.assign(state, {
         dataChannel: payload,
+        pc,
+      })
+    },
+    setCandidate(state, { payload }: PayloadAction<RTCIceCandidateInit>) {
+      const { pc } = state
+      state = Object.assign(state, {
+        candidate: payload,
         pc,
       })
     },
@@ -117,6 +126,7 @@ const webRTC = createSlice({
     builder.addCase(initWebRTCState.pending, (state) => {
       state.pc?.close()
       state.localStream?.getTracks().forEach((track) => track.stop())
+      state.stream?.clone()
       const offer = state.offer || {}
       state = Object.assign(state, {
         pc: undefined,
@@ -131,5 +141,5 @@ const webRTC = createSlice({
   },
 })
 
-export const { setOfferRequest, setAnswerChannel } = webRTC.actions
+export const { setOfferRequest, setAnswerChannel, setCandidate } = webRTC.actions
 export default webRTC.reducer

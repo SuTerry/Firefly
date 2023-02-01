@@ -21,7 +21,7 @@ import { userApi } from '@api/index'
 
 import { useAppSelector, useAppDispatch } from '@store/index'
 import { setRoom, setMeta } from '@store/modules/dialog'
-import { changeRoom } from '@store/modules/room'
+import { changeRoom, setInitPlays } from '@store/modules/room'
 
 import CreateRoom from './CreateRoom'
 import SendNft from './SendNft'
@@ -52,6 +52,7 @@ export default (): JSX.Element => {
   const { roomOpen } = useAppSelector((store) => store.dialog)
   const { accountAddress } = useAppSelector((store) => store.wallet)
   const { room } = useAppSelector((store) => store.room)
+  const { socket, nickname } = useAppSelector((store) => store.user)
 
   const dispatch = useAppDispatch()
 
@@ -61,8 +62,6 @@ export default (): JSX.Element => {
 
   const getList = async () => {
     const _list = await userApi.get_room_list()
-    console.log(`room list: ${_list}`)
-
     setRoomList(_list.map((item) => item[1]))
   }
 
@@ -72,7 +71,18 @@ export default (): JSX.Element => {
   }
 
   const handleJoin = async (room: Room) => {
-    dispatch(changeRoom(room))
+    socket?.emit('join', {
+      room: room.id,
+      play: {
+        name: nickname,
+        id: accountAddress
+      }
+    })
+    socket?.on('join', ({plays}) => {
+      if (!plays) return 
+      dispatch(changeRoom(room))
+      dispatch(setInitPlays(plays))
+    })
   }
 
   useEffect(() => {

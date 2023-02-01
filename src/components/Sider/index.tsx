@@ -11,7 +11,7 @@ import { siderLang } from '@langs/index'
 
 import { useAppSelector, useAppDispatch } from '@store/index'
 import { disconnectWallet } from '@store/modules/wallet'
-import { setCurrentFriendIndex } from '@store/modules/friends'
+import { setCurrentFriendIndex, setFriends } from '@store/modules/friends'
 
 import { userApi } from '@api/index'
 
@@ -34,16 +34,25 @@ export default (): JSX.Element => {
   const { friends, currentFriendIndex, currentFriend } = useAppSelector(
     (state) => state.friends
   )
+  const { socket, nickname, headerImg } = useAppSelector((state) => state.user)
+  const { accountAddress } = useAppSelector((state) => state.wallet)
 
   const dispatch = useAppDispatch()
 
   const [text, setText] = useState('')
 
   const handle = async () => {
-    if (!text) return
+    // if (!text) return
     try {
-      await userApi.add_friend(text)
+      const res = await userApi.add_friend(text)
+      dispatch(setFriends([...friends, res]))
       setText('')
+      socket?.emit('friend', {
+        name: nickname,
+        img: headerImg,
+        account_id: accountAddress,
+        toId: text,
+      })
       enqueueSnackbar(local(siderLang.successfulRequest), {
         variant: 'success',
       })
@@ -108,7 +117,7 @@ export default (): JSX.Element => {
           {friends.map((friend, index) => {
             return (
               <AntTab
-                key={friend.hash}
+                key={friend.account_id}
                 icon={
                   <img style={{ width: '30px' }} src={path(friend.image)} />
                 }

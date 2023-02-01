@@ -55,9 +55,8 @@ export const CONTRACTID =
       : env === 'sit'
         ? ''
         : env === 'dev'
-          ? 'dev-1674055482572-51246805406720'
-          : 'dev-1674055482572-51246805406720'
-          // : 'dev-1672318794070-83988914819590'
+          ? 'dev-1675150088225-11398664028067'
+          : 'dev-1675150088225-11398664028067'
 
 // nft_contractId
 export const NFT_CONTRACTID =
@@ -70,6 +69,18 @@ export const NFT_CONTRACTID =
         : env === 'dev'
           ? 'dev-1674914206505-69800555685557'
           : 'dev-1674914206505-69800555685557'
+
+// websocket
+export const WEBSOCKET =
+  env === 'pro'
+    ? ''
+    : env === 'pre'
+      ? ''
+      : env === 'sit'
+        ? ''
+        : env === 'dev'
+          ? ''
+          : '//localhost:8888'
 
 // static
 export const STATIC =

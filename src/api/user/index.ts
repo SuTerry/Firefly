@@ -25,7 +25,7 @@ class User extends Contracts {
     return this.viewContract<Friends[]>('get_friend_list', { account_id })
   }
 
-  async add_friend(friend_account_id: string): Promise<boolean> {
+  async add_friend(friend_account_id: string): Promise<Friends> {
     const res = await this.changeContract('add_friend', { friend_account_id })
     return JSON.parse(res)
   }
@@ -42,6 +42,10 @@ class User extends Contracts {
   async destory_room(room_id: number): Promise<number> {
     const res = await this.changeContract('destory_room', { room_id })
     return JSON.parse(res)
+  }
+
+  async account_info(account_id: string): Promise<[string, string]> {
+    return this.viewContract<[string, string]>('account_info', { account_id })
   }
 }
 

@@ -1,27 +1,24 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-import { offer, answer, offerRemote } from '@utils/webRTC'
+import { answer, offerRemote } from '@utils/webRTC'
 
 import type { RootState } from '..'
-import type { Friends } from './friends'
-
-interface Position {
-  x: number
-  y: number
-  z: number
-}
 
 export interface Play {
   name: string
   id: string
+  identity: 'offer' | 'answer'
   pc: RTCPeerConnection
+  localStream: MediaStream
+  audioContext: AudioContext
   dataChannel: RTCDataChannel | undefined
   stream: MediaStream | undefined
-  localStream: MediaStream
-  identity: 'offer' | 'answer'
-  friend: Friends
-  initPosition?: Position
-  audioContext: AudioContext
+  candidate?: RTCIceCandidateInit
+}
+
+interface InitPlay {
+  name: string
+  id: string
 }
 
 export interface Room {
@@ -35,13 +32,12 @@ export interface Room {
 interface RoomInit {
   playes: Record<string, Play>
   room: Room | undefined
-  discovery: Friends[]
+  initPlays: InitPlay[]
 }
 
 interface CreatRoomAnswerProps {
   offer: RTCSessionDescription
-  friend: Friends
-  position: Position | undefined
+  play: Play
 }
 
 interface SetRoomOfferRemoteProps {
@@ -57,16 +53,32 @@ interface SetAnswerChannelProps {
 const initialState: RoomInit = {
   playes: {},
   room: undefined,
-  discovery: [],
+  initPlays: [],
 }
 
-export const creatRoomOffer = createAsyncThunk('room/creatRoomOffer', offer)
 
 export const creatRoomAnswer = createAsyncThunk(
   'room/creatRoomAnswer',
-  async ({ offer, friend, position }: CreatRoomAnswerProps) => {
+  async ({ offer, play }: CreatRoomAnswerProps, { getState }) => {
+    const { socket } = (getState() as RootState).user
     const media = { video: false, audio: true }
-    return await answer({ offer, friend, media, position })
+    const type = 'room'
+    const res = await answer({ offer, media, play })
+    res.pc.onicecandidate = (event) => {
+      if (event.candidate)
+        socket?.emit('candidate', {
+          type,
+          candidate: event.candidate,
+          toId: play.id,
+        })
+    }
+    // send answer
+    socket?.emit('answer', {
+      type: 'friend',
+      answer: res.pc.localDescription,
+      toId: play.id,
+    })
+    return res
   }
 )
 
@@ -74,8 +86,9 @@ export const setRoomOfferRemote = createAsyncThunk(
   'weRTC/setRoomOfferRemote',
   async ({ answer, key }: SetRoomOfferRemoteProps, { getState }) => {
     const { playes } = (getState() as RootState).room
-    const { pc, friend } = playes[key]
-    return await offerRemote({ pc: pc!, answer, friend })
+    const { pc } = playes[key]
+    const res = await offerRemote({ pc: pc!, answer })
+    return {...res, key}
   }
 )
 
@@ -83,6 +96,9 @@ const room = createSlice({
   name: 'room',
   initialState,
   reducers: {
+    setInitPlays(state, { payload }: PayloadAction<InitPlay[]>) {
+      state.initPlays = payload
+    },
     addPlay(state, { payload }: PayloadAction<Play>) {
       const newPlay = { [payload.id]: payload }
       state.playes = { ...state.playes, ...newPlay }
@@ -94,16 +110,6 @@ const room = createSlice({
     },
     changeRoom(state, { payload }: PayloadAction<Room | undefined>) {
       state.room = payload
-    },
-    addDiscovery(state, { payload }: PayloadAction<Friends>) {
-      const _discovery = [...state.discovery]
-      _discovery.push(payload)
-      state.discovery = _discovery
-    },
-    shiftDiscovery(state) {
-      const _discovery = [...state.discovery]
-      _discovery.shift()
-      state.discovery = _discovery
     },
     setAnswerChannel(state, { payload }: PayloadAction<SetAnswerChannelProps>) {
       const { key, dataChannel } = payload
@@ -122,54 +128,39 @@ const room = createSlice({
       state = Object.assign(state, {
         playes: {},
         room: undefined,
-        discovery: [],
+        initPlays: [],
       })
+    },
+    setRoomCandidate(state, { payload }: PayloadAction<[string, RTCIceCandidateInit]>) {
+      const _playes = { ...state.playes }
+      if (!_playes[payload[0]]) _playes[payload[0]] = {candidate: payload[1] } as Play
+      state.playes = { ..._playes }
     },
   },
   extraReducers(builder) {
-    builder.addCase(creatRoomOffer.fulfilled, (state, { payload }) => {
-      const { pc, dataChannel, friend, localStream } = payload
-      const { name, account_id } = friend
-      const id = account_id
-      const _playes = { ...state.playes }
-      _playes[id] = {
-        identity: 'offer',
-        pc,
-        dataChannel,
-        name,
-        id,
-        friend,
-        localStream,
-        audioContext: new AudioContext(),
-        stream: undefined,
-      }
-      state.playes = Object.assign(state.playes, _playes)
-    })
     builder.addCase(creatRoomAnswer.fulfilled, (state, { payload }) => {
-      const { pc, friend, stream, position, localStream } = payload
-      const { name, account_id } = friend
-      const id = account_id
+      const { pc, stream, localStream, play } = payload
+      const id = play!.id
       const _playes = { ...state.playes }
+      const candidate = _playes[id] ? _playes[id].candidate : undefined
       _playes[id] = {
         identity: 'answer',
         pc,
         stream,
-        name,
+        name: play!.name,
         id,
-        friend,
-        localStream,
+        localStream: localStream!,
         audioContext: new AudioContext(),
         dataChannel: undefined,
-        initPosition: position,
+        candidate
       }
       state.playes = Object.assign(state.playes, _playes)
     })
     builder.addCase(setRoomOfferRemote.fulfilled, (state, { payload }) => {
-      const { stream, friend } = payload
+      const { stream, key } = payload
       const _playes = { ...state.playes }
-      const id = friend.account_id
-      _playes[id] = {
-        ..._playes[id],
+      _playes[key] = {
+        ..._playes[key],
         stream,
       }
       state.playes = Object.assign(state.playes, _playes)
@@ -180,9 +171,9 @@ export const {
   addPlay,
   removePlay,
   changeRoom,
-  addDiscovery,
-  shiftDiscovery,
   setAnswerChannel,
   initRoom,
+  setInitPlays,
+  setRoomCandidate,
 } = room.actions
 export default room.reducer
