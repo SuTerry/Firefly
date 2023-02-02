@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react'
 
 import { io } from 'socket.io-client'
 
+import { useSnackbar } from 'notistack'
+
 import { useAppSelector, useAppDispatch } from '@store/index'
 import { setSocket } from '@store/modules/user'
 import { setFriends, setFriend, initFriend } from '@store/modules/friends'
@@ -16,6 +18,7 @@ import {
   setRoomCandidate,
   creatRoomAnswer,
   setRoomOfferRemote,
+  removePlay,
 } from '@store/modules/room'
 
 import { WEBSOCKET } from '@api/config'
@@ -23,14 +26,18 @@ import { WEBSOCKET } from '@api/config'
 import { answer, offerRemote, dataChannelMessage } from '@utils/webRTC'
 
 export default (): void => {
+  const { enqueueSnackbar } = useSnackbar()
+  
   const { accountAddress } = useAppSelector((store) => store.wallet)
   const { friends } = useAppSelector((store) => store.friends)
   const webRTC = useAppSelector((store) => store.webRTC)
+  const { playes } = useAppSelector((store) => store.room)
 
   const dispatch = useAppDispatch()
 
   const friendsRef = useRef(friends)
   const webRTCRef = useRef(webRTC)
+  const playesRef = useRef(playes)
 
   useEffect(() => {
     const socket = io(WEBSOCKET, {
@@ -110,7 +117,7 @@ export default (): void => {
         if (!friend) return
         dispatch(setOfferRemote(answer))
       } else if (type === 'room') {
-        dispatch(setRoomOfferRemote(answer))
+        dispatch(setRoomOfferRemote({answer, key: from}))
       }
     })
 
@@ -132,6 +139,14 @@ export default (): void => {
       if (type === 'media') {
         dispatch(initWebRTCState())
       }
+    })
+
+    socket.on('quit', ({ key }) => {
+      const { name } = playesRef.current[key]
+      dispatch(removePlay(key))
+      enqueueSnackbar(` Quit ${name}`, {
+        variant: 'warning',
+      })
     })
 
     socket.on('leave', (id) => {
@@ -165,4 +180,8 @@ export default (): void => {
   useEffect(() => {
     webRTCRef.current = webRTC
   }, [webRTC])
+
+  useEffect(() => {
+    playesRef.current = playes
+  }, [playes])
 }

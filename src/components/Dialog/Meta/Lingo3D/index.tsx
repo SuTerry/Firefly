@@ -24,8 +24,10 @@ import { useAppSelector, useAppDispatch } from '@store/index'
 import {
   setAnswerChannel,
   Play,
-  removePlay,
+  // removePlay,
   addPlay,
+  setConnected,
+  setModel,
 } from '@store/modules/room'
 
 import { NFTS } from '@constants/exhibition'
@@ -45,20 +47,32 @@ import './index.less'
 
 import { VolumeUp } from '@mui/icons-material'
 
+type aniModelVal = { idle: string, walking: string }
+
 const path = (name: string): string => `${STATIC}/model/${name}`
 const initX = 860
 const initY = -360
 const initZ = 994
 const fbxs = ['kazama.fbx', 'ARASHI.fbx', 'AYA.fbx']
+const aniModel: Record<string, aniModelVal> = {
+  'kazama.fbx': {
+    idle: 'Idle.fbx',
+    walking: 'Walking.fbx'
+  },
+  'ARASHI.fbx': {
+    idle: 'ARASHI_Idle.fbx',
+    walking: 'ARASHI_Walking.fbx'
+  },
+  'AYA.fbx': {
+    idle: 'Idle.fbx',
+    walking: 'Walking.fbx'
+  },
+}
 
 interface Position {
   x: number
   y: number
   z: number
-}
-
-interface Player extends Play {
-  connected: boolean
 }
 
 export default (): JSX.Element => {
@@ -75,8 +89,10 @@ export default (): JSX.Element => {
       path('AYA.fbx'),
       path('Idle.fbx'),
       path('Walking.fbx'),
+      path('ARASHI_Idle.fbx'),
+      path('ARASHI_Walking.fbx'),
     ],
-    '30.9mb'
+    '38.7mb'
   )
 
   const { enqueueSnackbar } = useSnackbar()
@@ -87,10 +103,8 @@ export default (): JSX.Element => {
 
   const dispatch = useAppDispatch()
 
-  const [count, setCount] = useState<number>(0)
   const [position, setPosition] = useState<Record<string, Position>>({})
   const [walking, setWalking] = useState<Record<string, boolean>>({})
-  const [players, setPlayers] = useState<Record<string, Player>>({})
   const [talking, setTalking] = useState<Record<string, boolean>>({})
 
   // 玩家聚焦相框视角调整
@@ -142,7 +156,6 @@ export default (): JSX.Element => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const message = (event: MessageEvent<any>) => {
     const { type, data } = JSON.parse(event.data)
-    console.log('type', type)
     if (type === 'position') {
       const { x, y, z, key } = data
       remoteDummyRef.current[key]?.lookAt({ x, y, z })
@@ -152,35 +165,10 @@ export default (): JSX.Element => {
       const _walking = { ...walking }
       _walking[key] = true
       setWalking(_walking)
-    } else if (type === 'out') {
-      const { name, id } = data
-      playOut(name, id)
+    } else if (type === 'init') {
+      const { key, model, position } = data
+      dispatch(setModel([key, model, position]))
     }
-  }
-
-  const playOut = (name: string, id: string) => {
-    // players
-    const _players = { ...players }
-    delete _players[id]
-    setPlayers({ ..._players })
-    // position
-    const _position = { ...position }
-    delete _position[id]
-    setPosition({ ..._position })
-    // walking
-    const _walking = { ...walking }
-    delete _walking[id]
-    setWalking({ ..._walking })
-    // talking
-    const _talking = { ...talking }
-    delete _talking[id]
-    setWalking({ ..._talking })
-    // playes
-    dispatch(removePlay(id))
-    enqueueSnackbar(`${name} Out`, {
-      variant: 'warning',
-    })
-    playes[id].dataChannel?.removeEventListener('message', message)
   }
 
   useEffect(() => {
@@ -194,8 +182,6 @@ export default (): JSX.Element => {
       nft.height = height
     })
 
-    console.log(initPlays, 'initPlays')
-
     // join online play
     initPlays.forEach(async (play) => {
       const media = { video: false, audio: true }
@@ -206,12 +192,13 @@ export default (): JSX.Element => {
       const { pc, dataChannel, localStream } = await offer({ media, isMeta })
       const _play: Play = {
         ...play,
-        identity: 'offer',
+        identity: 'answer',
         pc,
         dataChannel,
         localStream: localStream!,
         audioContext: new AudioContext(),
         stream: undefined,
+        connected: false,
       }
       dispatch(addPlay(_play))
 
@@ -230,13 +217,15 @@ export default (): JSX.Element => {
         type,
         media,
         isMeta,
-        play: _play,
+        play: {
+          name: nickname,
+          id: accountAddress
+        },
       })
     })
   }, [])
 
   useEffect(() => {
-    let _count = 0
     // 键盘WASD控制
     keyboard.onKeyPress = (_, keys) => {
       const dummy = dummyRef.current
@@ -267,9 +256,9 @@ export default (): JSX.Element => {
         const play = playes[key]
         console.log(`send ${play?.name} type ${data.type}`)
         try {
-          if (play && players[key].connected) play.dataChannel?.send(value)
+          if (play && play.connected) play.dataChannel?.send(value)
         } catch (error) {
-          playOut(play.name, key)
+
         }
       })
     }
@@ -277,6 +266,7 @@ export default (): JSX.Element => {
     const keys = Object.keys(playes)
     keys.forEach((key) => {
       const play = playes[key]
+      if (!play.pc) return
       play.pc.ondatachannel = (event) => {
         const dataChannel = event.channel
         if (!play.dataChannel) dispatch(setAnswerChannel({ key, dataChannel }))
@@ -284,6 +274,10 @@ export default (): JSX.Element => {
 
       if (play.dataChannel)
         play.dataChannel.onmessage = message
+
+      if (play.pc?.connectionState !== 'connected' && play.candidate) {
+        play.pc?.addIceCandidate(new RTCIceCandidate(play.candidate))
+      }
 
       const _positions = { ...position }
       _positions[key] = { x: 0, y: 0, z: 0 }
@@ -294,10 +288,6 @@ export default (): JSX.Element => {
       const _talking = { ...talking }
       _talking[key] = false
       setTalking(_talking)
-
-      if (play.identity === 'answer') _count += 1
-      if (play.pc.connectionState !== 'connected') return
-
 
       // 音频
       if (remoteAudioRef.current[key] && play.stream) {
@@ -322,153 +312,7 @@ export default (): JSX.Element => {
       }
     })
 
-    setCount(_count)
   }, [playes])
-
-  // useEffect(() => {
-  //   const keys = Object.keys(playes)
-  //   const _players = { ...players }
-  //   let update = false
-  //   keys.forEach((key) => {
-  //     const play = playes[key]
-
-  //     if (_players.hasOwnProperty(key)) {
-  //       // stream
-  //       if (!_players[key].stream && play.stream) {
-  //         _players[key].stream = play.stream
-  //         update = true
-  //       }
-  //       // dataChannel
-  //       if (!_players[key].dataChannel && play.dataChannel) {
-  //         _players[key].dataChannel = play.dataChannel
-  //         update = true
-  //       }
-
-  //       const { x, y, z } = play.initPosition || { x: 0, y: 0, z: 0 }
-  //       if (x !== 0 && x !== 860 && !!remoteDummyRef.current[key]) {
-  //         remoteDummyRef.current[key]!.x = x
-  //         remoteDummyRef.current[key]!.y = y
-  //         remoteDummyRef.current[key]!.z = z
-  //         remoteDummyRef.current[key]?.lookAt({ x, y, z })
-  //       }
-  //       return
-  //     }
-
-  //     _players[key] = { ...play, connected: false }
-  //     update = true
-
-  //     // if (play.pc.connectionState !== 'connected') {
-  //     if (play.identity === 'offer') {
-  //       console.log(`send offer of ${play.name}`)
-  //       const { x, y, z } = dummyRef.current || { x: 0, y: 0, z: 0 }
-  //       roomOffer(play.friend, {
-  //         offer: play.pc?.localDescription,
-  //         position: { x, y, z },
-  //       })
-  //     } else {
-  //       console.log(`send answer of ${play.friend.name}`)
-  //       roomAnswer(play.friend, {
-  //         answer: play.pc?.localDescription,
-  //       })
-  //     }
-  //     play.pc.ondatachannel = (event) => {
-  //       const dataChannel = event.channel
-  //       if (!play.dataChannel) {
-  //         console.log(`create dataChannel of ${play.name}`)
-  //         dispatch(setAnswerChannel({ key, dataChannel }))
-  //       }
-  //     }
-
-  //     const _positions = { ...position }
-  //     _positions[key] = { x: 0, y: 0, z: 0 }
-  //     setPosition(_positions)
-  //     const _walking = { ...walking }
-  //     _walking[key] = false
-  //     setWalking(_walking)
-  //     const _talking = { ...talking }
-  //     _talking[key] = false
-  //     setTalking(_talking)
-  //     // }
-  //   })
-
-  //   if (update) setPlayers({ ..._players })
-  // }, [playes])
-
-  // useEffect(() => {
-  //   let _count = 0
-  //   // 键盘WASD控制
-  //   keyboard.onKeyPress = (_, keys) => {
-  //     const dummy = dummyRef.current
-  //     const speed = 2.4
-  //     if (!dummy) return
-
-  //     if (keys.has('w')) {
-  //       dummy.strideForward = -speed
-  //     } else if (keys.has('s')) {
-  //       dummy.strideForward = speed
-  //     } else if (keys.has('a')) {
-  //       dummy.strideRight = speed
-  //     } else if (keys.has('d')) {
-  //       dummy.strideRight = -speed
-  //     } else {
-  //       dummy.strideForward = 0
-  //       dummy.strideRight = 0
-  //     }
-
-  //     const { x, y, z } = dummy
-
-  //     const data = {
-  //       type: 'position',
-  //       data: { x, y, z, key: accountAddress },
-  //     }
-  //     const value = JSON.stringify(data)
-  //     Object.keys(playes).forEach((key) => {
-  //       const play = playes[key]
-  //       console.log(`send ${play?.name} type ${data.type}`)
-  //       try {
-  //         if (play && players[key].connected) play.dataChannel?.send(value)
-  //       } catch (error) {
-  //         playOut(play.name, key)
-  //       }
-  //     })
-  //   }
-
-  //   Object.keys(players).forEach((key) => {
-  //     if (players[key].identity === 'answer') _count += 1
-  //     if (!players[key].connected) return
-
-  //     // 接收其他玩家移动位置
-  //     if (playes[key]) {
-  //       console.log(playes[key].dataChannel, 'playes[key].dataChannel')
-  //       playes[key].dataChannel?.addEventListener('message', message)
-  //     }
-
-  //     // 音频
-  //     if (remoteAudioRef.current[key] && playes[key]) {
-  //       const { stream, audioContext } = playes[key]
-  //       if (!stream) return
-  //       remoteAudioRef.current[key]!.srcObject = stream
-
-  //       // 音频收集
-  //       const mediaStreamSource = audioContext.createMediaStreamSource(stream)
-  //       const scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1)
-  //       mediaStreamSource.connect(scriptProcessor)
-  //       scriptProcessor.connect(audioContext.destination)
-  //       scriptProcessor.onaudioprocess = (e) => {
-  //         const buffer = e.inputBuffer.getChannelData(0)
-  //         // 获取缓冲区中最大的音量值
-  //         // eslint-disable-next-line prefer-spread
-  //         const maxVal = Math.max.apply(Math, buffer as unknown as number[])
-  //         // 显示音量值
-  //         const _talking = { ...talking }
-  //         _talking[key] = Math.ceil(maxVal * 100) > 10
-  //         setTalking({ ..._talking })
-  //       }
-  //     }
-  //   })
-
-  //   setCount(_count)
-  // }, [players])
 
   // 其他玩家移动帧
   useLoop(
@@ -483,22 +327,33 @@ export default (): JSX.Element => {
   )
   useLoop(
     () => {
-      const _players = { ...players }
-      let update = false
-      Object.keys(_players).forEach((key) => {
-        if (_players[key].connected) return
-        if (playes[key].pc.connectionState === 'connected') {
-          _players[key].connected = true
-          update = true
-          if (playes[key].identity === 'offer')
-            enqueueSnackbar(`Join In ${playes[key].name}`, {
+      const _playes = { ...playes }
+      Object.keys(_playes).forEach((key) => {
+        const play = playes[key]
+        if (play.pc?.connectionState === 'connected' && !play.connected) {
+          dispatch(setConnected(key))
+          const data = {
+            type: 'init',
+            data: {
+              key: accountAddress,
+              model: modules[initPlays.length],
+              position: {
+                x: dummyRef.current ? dummyRef.current.x : initX,
+                y: dummyRef.current ? dummyRef.current.y + 15 : initY,
+                z: dummyRef.current ? dummyRef.current.z : initX,
+              }
+            }
+          }
+          play.dataChannel?.send(JSON.stringify(data))
+          if (play.identity === 'offer') {
+            enqueueSnackbar(`Join In ${play.name}`, {
               variant: 'success',
             })
+          }
         }
       })
-      if (update) setPlayers({ ..._players })
     },
-    Object.values(players).some((player) => !player.connected)
+    Object.values(playes).some((playe) => !playe.connected)
   )
 
   useLoop(() => {
@@ -530,7 +385,6 @@ export default (): JSX.Element => {
           {/* 艺术馆模型 */}
           <Model
             metalnessFactor={-1.1}
-            onClick={(e) => console.log(e.point)}
             roughnessFactor={1.5}
             src={path('galleryBK.glb')}
             scale={10}
@@ -592,8 +446,8 @@ export default (): JSX.Element => {
               // src={path('kazama.fbx')}
               src={path(modules[initPlays.length])}
               animations={{
-                idle: path('Idle.fbx'),
-                running: path('Walking.fbx'),
+                idle: path(aniModel[modules[initPlays.length]].idle),
+                running: path(aniModel[modules[initPlays.length]].walking),
               }}
               strideMove
             >
@@ -603,18 +457,17 @@ export default (): JSX.Element => {
             </Dummy>
           </ThirdPersonCamera>
           {/* 其他玩家 */}
-          {Object.keys(playes).map((key, index) => {
+          {Object.keys(playes).map((key) => {
             const play = playes[key]
-            const _count = index < count ? index : index + 1
-            if (play.pc.connectionState === 'connected') {
+            if (play.connected && play.model) {
               return (
                 <Dummy
                   key={key}
                   ref={(el) => (remoteDummyRef.current[key] = el)}
                   physics="character"
-                  x={initX}
-                  y={initY}
-                  z={initZ}
+                  x={play.position?.x}
+                  y={play.position?.y}
+                  z={play.position?.z}
                   width={15}
                   height={65}
                   scale={2}
@@ -624,11 +477,10 @@ export default (): JSX.Element => {
                   strideMove
                   intersectIds={[`cursor-${key}`]}
                   onIntersect={() => handleIntersect(key)}
-                  // src={path('kazama.fbx')}
-                  src={path(modules[_count])}
+                  src={path(play.model)}
                   animations={{
-                    idle: path('Idle.fbx'),
-                    walking: path('Walking.fbx'),
+                    idle: path(aniModel[play.model].idle),
+                    walking: path(aniModel[play.model].walking),
                   }}
                 >
                   <HTML>
@@ -643,13 +495,15 @@ export default (): JSX.Element => {
                       autoPlay
                     ></audio>
                   </HTML>
-                  <HTMLMesh
-                    ref={(el) => (remoteNameRef.current[key] = el)}
-                    y={42}
-                    scale={0.6}
-                  >
-                    <p style={{ fontSize: '12px' }}>{play.name}</p>
-                  </HTMLMesh>
+                  <div>
+                    <HTMLMesh
+                      ref={(el) => (remoteNameRef.current[key] = el)}
+                      y={42}
+                      scale={0.6}
+                    >
+                      <p style={{ fontSize: '12px' }}>{play.name}</p>
+                    </HTMLMesh>
+                  </div>
                 </Dummy>
               )
             } else {
@@ -659,7 +513,7 @@ export default (): JSX.Element => {
           {/* 其他玩家移动位置 */}
           {Object.keys(playes).map((key) => {
             const play = playes[key]
-            const connected = play.pc.connectionState === 'connected'
+            const connected = play.connected
             return (
               <Cube
                 key={key}

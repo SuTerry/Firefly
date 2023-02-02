@@ -5,7 +5,7 @@ import { INFORMATION } from '@constants/libp2p'
 import { Friends, pushRemotes } from '@store/modules/friends'
 
 import type { AppDispatch } from '@store/index'
-import type { Play } from '@store/modules/room'
+import type { InitPlay } from '@store/modules/room'
 
 
 
@@ -28,7 +28,7 @@ interface OfferRes {
 interface AnswerParams {
   offer: RTCSessionDescription
   media: MediaStreamConstraints
-  play?: Play
+  play?: InitPlay
 }
 
 interface AnswerRes {
@@ -36,7 +36,7 @@ interface AnswerRes {
   pc: RTCPeerConnection
   media: MediaStreamConstraints | undefined
   stream: MediaStream | undefined
-  play?: Play
+  play?: InitPlay
 }
 
 interface OfferRemoteParams {

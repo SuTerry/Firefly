@@ -4,19 +4,28 @@ import { answer, offerRemote } from '@utils/webRTC'
 
 import type { RootState } from '..'
 
+interface Position {
+  x: number
+  y: number
+  z: number
+}
+
 export interface Play {
   name: string
   id: string
   identity: 'offer' | 'answer'
+  connected: boolean
   pc: RTCPeerConnection
   localStream: MediaStream
   audioContext: AudioContext
   dataChannel: RTCDataChannel | undefined
   stream: MediaStream | undefined
   candidate?: RTCIceCandidateInit
+  model?: string
+  position?: Position
 }
 
-interface InitPlay {
+export interface InitPlay {
   name: string
   id: string
 }
@@ -37,7 +46,7 @@ interface RoomInit {
 
 interface CreatRoomAnswerProps {
   offer: RTCSessionDescription
-  play: Play
+  play: InitPlay
 }
 
 interface SetRoomOfferRemoteProps {
@@ -74,7 +83,7 @@ export const creatRoomAnswer = createAsyncThunk(
     }
     // send answer
     socket?.emit('answer', {
-      type: 'friend',
+      type: 'room',
       answer: res.pc.localDescription,
       toId: play.id,
     })
@@ -88,7 +97,7 @@ export const setRoomOfferRemote = createAsyncThunk(
     const { playes } = (getState() as RootState).room
     const { pc } = playes[key]
     const res = await offerRemote({ pc: pc!, answer })
-    return {...res, key}
+    return { ...res, key }
   }
 )
 
@@ -133,7 +142,22 @@ const room = createSlice({
     },
     setRoomCandidate(state, { payload }: PayloadAction<[string, RTCIceCandidateInit]>) {
       const _playes = { ...state.playes }
-      if (!_playes[payload[0]]) _playes[payload[0]] = {candidate: payload[1] } as Play
+      if (!_playes[payload[0]]) {
+        _playes[payload[0]] = { candidate: payload[1], connected: false } as Play
+      } else {
+        _playes[payload[0]].candidate = payload[1]
+      }
+      state.playes = { ..._playes }
+    },
+    setConnected(state, { payload }: PayloadAction<string>) {
+      const _playes = { ...state.playes }
+      _playes[payload].connected = true
+      state.playes = { ..._playes }
+    },
+    setModel(state, { payload }: PayloadAction<[string, string, Position]>) {
+      const _playes = { ...state.playes }
+      _playes[payload[0]].model = payload[1]
+      _playes[payload[0]].position = payload[2]
       state.playes = { ..._playes }
     },
   },
@@ -144,7 +168,8 @@ const room = createSlice({
       const _playes = { ...state.playes }
       const candidate = _playes[id] ? _playes[id].candidate : undefined
       _playes[id] = {
-        identity: 'answer',
+        identity: 'offer',
+        connected: false,
         pc,
         stream,
         name: play!.name,
@@ -175,5 +200,7 @@ export const {
   initRoom,
   setInitPlays,
   setRoomCandidate,
+  setConnected,
+  setModel,
 } = room.actions
 export default room.reducer

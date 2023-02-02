@@ -28,28 +28,15 @@ const BootstrapDialog = styled(Dialog)(() => ({
 
 export default ({ open, setOpen }: MwnuProps): JSX.Element => {
   const { roomOpen } = useAppSelector((store) => store.dialog)
-  const { playes } = useAppSelector((store) => store.room)
-  const { nickname } = useAppSelector((store) => store.user)
-  const { accountAddress } = useAppSelector((store) => store.wallet)
+  const { room } = useAppSelector((store) => store.room)
+  const { socket } = useAppSelector((store) => store.user)
   const dispatch = useAppDispatch()
 
   const loacl = langHook()
 
   const handleClose = () => {
     if (roomOpen) {
-      const data = {
-        type: 'out',
-        data: {
-          name: nickname,
-          id: accountAddress,
-        },
-      }
-      const value = JSON.stringify(data)
-      Object.values(playes).forEach((play) => {
-        try {
-          play.dataChannel?.send(value)
-        } catch (error) {}
-      })
+      socket?.emit('quit', { room: room?.id })
       dispatch(initRoom())
     } else {
       dispatch(initWebRTCState())
