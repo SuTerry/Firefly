@@ -50,9 +50,9 @@ import { VolumeUp } from '@mui/icons-material'
 type aniModelVal = { idle: string, walking: string }
 
 const path = (name: string): string => `${STATIC}/model/${name}`
-const initX = 860
+const initX = 165
 const initY = -360
-const initZ = 994
+const initZ = -186
 const fbxs = ['kazama.fbx', 'ARASHI.fbx', 'AYA.fbx']
 const aniModel: Record<string, aniModelVal> = {
   'kazama.fbx': {
@@ -68,6 +68,33 @@ const aniModel: Record<string, aniModelVal> = {
     walking: 'Walking.fbx'
   },
 }
+
+const dancers = [
+  {
+    dancer: 'MIYU.fbx',
+    dance: 'MIYU_Dance.fbx',
+    x: -560,
+    y: initY,
+    z: -220,
+    lookAt: [8000, 0, 0],
+  },
+  {
+    dancer: 'NANA.fbx',
+    dance: 'NANA_Dance.fbx',
+    x: -30,
+    y: initY,
+    z: -690,
+    lookAt: [0, 0, 8000],
+  },
+  {
+    dancer: 'SHO.fbx',
+    dance: 'SHO_Dance.fbx',
+    x: -33,
+    y: initY,
+    z: 248,
+    lookAt: [0, 0, -8000],
+  },
+]
 
 interface Position {
   x: number
@@ -384,6 +411,7 @@ export default (): JSX.Element => {
           {/* gallery model */}
           {/* 艺术馆模型 */}
           <Model
+            onClick={(e) => console.log(e.point)}
             metalnessFactor={-1.1}
             roughnessFactor={1.5}
             src={path('galleryBK.glb')}
@@ -440,7 +468,7 @@ export default (): JSX.Element => {
               width={15}
               height={65}
               scale={2}
-              lookAt={[8000, 0, 0]}
+              lookAt={[-8000, 0, 0]}
               roughnessFactor={0}
               metalnessFactor={0.3}
               // src={path('kazama.fbx')}
@@ -528,6 +556,29 @@ export default (): JSX.Element => {
           })}
           {/* 准星 */}
           <Reticle />
+          {/* 舞者 */}
+          {
+            dancers.map((dancer, index) =>
+              <Dummy
+                key={index}
+                physics="character"
+                x={dancer.x}
+                y={dancer.y}
+                z={dancer.z}
+                width={15}
+                height={65}
+                scale={2}
+                lookAt={dancer.lookAt}
+                roughnessFactor={0}
+                metalnessFactor={0.3}
+                src={path(dancer.dancer)}
+                animations={{
+                  idle: path(dancer.dance),
+                }}
+                strideMove
+              />
+            )
+          }
         </World>
       )}
     </>

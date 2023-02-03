@@ -79,8 +79,8 @@ export const WEBSOCKET =
       : env === 'sit'
         ? ''
         : env === 'dev'
-          ? '//54.250.193.38:8888'
-          : '//54.250.193.38:8888'
+          ? 'https://signaling.refract.top:8888'
+          : 'https://signaling.refract.top:8888'
 
 // static
 export const STATIC =
