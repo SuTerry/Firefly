@@ -91,6 +91,8 @@ export default (): void => {
         }
       } else if (type === 'media') {
         if (!friend) return
+        console.log(webRTCRef.current.isUse, 'webRTCRef.current.isUse');
+        
         if (webRTCRef.current.isUse) {
           // send close
           socket?.emit('close', {

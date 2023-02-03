@@ -4,7 +4,10 @@ import { useAppSelector, useAppDispatch } from '@store/index'
 import { setAnswerChannel } from '@store/modules/webRTC'
 
 export default (account_id: string): void => {
-  const webrtc= useAppSelector(
+  const { pc, media, isOffer, isMeta, offer, candidate, dataChannel } = useAppSelector(
+    (store) => store.webRTC
+  )
+  const webRTC = useAppSelector(
     (store) => store.webRTC
   )
   const { socket } = useAppSelector((store) => store.user)
@@ -13,27 +16,27 @@ export default (account_id: string): void => {
 
   useEffect(() => {
     
-    if (webrtc.pc) {
-      if (webrtc.isOffer) {
+    if (pc) {
+      if (isOffer) {
         socket?.emit('offer', {
           type: 'media',
-          offer: webrtc.pc.localDescription,
+          offer: pc.localDescription,
           toId: account_id,
-          media: webrtc.media,
-          isMeta: webrtc.isMeta,
+          media,
+          isMeta,
         })
       } else {
         socket?.emit('answer', {
           type: 'media',
-          answer: webrtc.pc.localDescription,
+          answer: pc.localDescription,
           toId: account_id,
         })
-        webrtc.pc.ondatachannel = (event) => {
-          if (!webrtc.dataChannel) dispatch(setAnswerChannel(event.channel))
+        pc.ondatachannel = (event) => {
+          if (!dataChannel) dispatch(setAnswerChannel(event.channel))
         }
       }
 
-      webrtc.pc.onicecandidate = (event) => {
+      pc.onicecandidate = (event) => {
         if (event.candidate)
           socket?.emit('candidate', {
             type: 'media',
@@ -42,21 +45,26 @@ export default (account_id: string): void => {
           })
       }
       
-    } else if (webrtc.offer && !webrtc.media) {
-      // socket?.emit('close', {
-      //   type: 'media',
-      //   toId: account_id,
-      // })
+    } else if (offer && !media) {
+      socket?.emit('close', {
+        type: 'media',
+        toId: account_id,
+      })
     }
-    
-    console.log(webrtc, 'webrtc')
+
    
-  }, [webrtc])
+  }, [pc, media])
+
 
   useEffect(() => {
-    if (!webrtc.pc) return
-    if (webrtc.pc.connectionState !== 'connected' && webrtc.candidate) {
-      webrtc.pc.addIceCandidate(new RTCIceCandidate(webrtc.candidate))
+    console.log(webRTC, 'webRTC');
+    
+  }, [webRTC])
+  
+
+  useEffect(() => {
+    if (pc?.connectionState !== 'connected' && candidate) {
+      pc?.addIceCandidate(new RTCIceCandidate(candidate))
     }
-  }, [webrtc])
+  }, [candidate])
 }
