@@ -118,8 +118,14 @@ export default (): JSX.Element => {
       path('Walking.fbx'),
       path('ARASHI_Idle.fbx'),
       path('ARASHI_Walking.fbx'),
+      path('MIYU.fbx'),
+      path('MIYU_Dance.fbx'),
+      path('NANA.fbx'),
+      path('NANA_Dance.fbx'),
+      path('SHO.fbx'),
+      path('SHO_Dance.fbx'),
     ],
-    '38.7mb'
+    '62mb'
   )
 
   const { enqueueSnackbar } = useSnackbar()
