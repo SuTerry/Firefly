@@ -142,9 +142,11 @@ export default (): void => {
     })
 
     socket.on('quit', ({ key }) => {
-      const { name } = playesRef.current[key]
+
+      const play = playesRef.current[key]
       dispatch(removePlay(key))
-      enqueueSnackbar(` Quit ${name}`, {
+      if (!play) return
+      enqueueSnackbar(` Quit ${play.name}`, {
         variant: 'warning',
       })
     })

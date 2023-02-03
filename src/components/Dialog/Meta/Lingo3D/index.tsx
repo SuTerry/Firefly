@@ -297,6 +297,8 @@ export default (): JSX.Element => {
     }
 
     const keys = Object.keys(playes)
+    console.log(playes, 'playes')
+    
     keys.forEach((key) => {
       const play = playes[key]
       if (!play.pc) return
