@@ -189,6 +189,7 @@ export default (): JSX.Element => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const message = (event: MessageEvent<any>) => {
     const { type, data } = JSON.parse(event.data)
+    console.log(type, 'type')
     if (type === 'position') {
       const { x, y, z, key } = data
       remoteDummyRef.current[key]?.lookAt({ x, y, z })
@@ -380,7 +381,7 @@ export default (): JSX.Element => {
               }
             }
           }
-          if (play.dataChannel?.readyState === 'open') play.dataChannel?.send(JSON.stringify(data))
+          if (play.dataChannel?.readyState === 'open') setTimeout(() => play.dataChannel?.send(JSON.stringify(data)), 300)
           if (play.identity === 'offer')
             enqueueSnackbar(`Join In ${play.name}`, {
               variant: 'success',
