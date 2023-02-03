@@ -63,8 +63,9 @@ export default (account_id: string): void => {
   
 
   useEffect(() => {
+    if (!pc) return
     if (pc?.connectionState !== 'connected' && candidate) {
       pc?.addIceCandidate(new RTCIceCandidate(candidate))
     }
-  }, [candidate])
+  }, [candidate, pc])
 }
