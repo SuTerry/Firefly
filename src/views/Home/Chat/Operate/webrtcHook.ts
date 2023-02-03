@@ -4,7 +4,7 @@ import { useAppSelector, useAppDispatch } from '@store/index'
 import { setAnswerChannel } from '@store/modules/webRTC'
 
 export default (account_id: string): void => {
-  const { pc, media, isOffer, isMeta, offer, candidate, dataChannel } = useAppSelector(
+  const webrtc= useAppSelector(
     (store) => store.webRTC
   )
   const { socket } = useAppSelector((store) => store.user)
@@ -13,27 +13,27 @@ export default (account_id: string): void => {
 
   useEffect(() => {
     
-    if (pc) {
-      if (isOffer) {
+    if (webrtc.pc) {
+      if (webrtc.isOffer) {
         socket?.emit('offer', {
           type: 'media',
-          offer: pc.localDescription,
+          offer: webrtc.pc.localDescription,
           toId: account_id,
-          media,
-          isMeta,
+          media: webrtc.media,
+          isMeta: webrtc.isMeta,
         })
       } else {
         socket?.emit('answer', {
           type: 'media',
-          answer: pc.localDescription,
+          answer: webrtc.pc.localDescription,
           toId: account_id,
         })
-        pc.ondatachannel = (event) => {
-          if (!dataChannel) dispatch(setAnswerChannel(event.channel))
+        webrtc.pc.ondatachannel = (event) => {
+          if (!webrtc.dataChannel) dispatch(setAnswerChannel(event.channel))
         }
       }
 
-      pc.onicecandidate = (event) => {
+      webrtc.pc.onicecandidate = (event) => {
         if (event.candidate)
           socket?.emit('candidate', {
             type: 'media',
@@ -42,19 +42,21 @@ export default (account_id: string): void => {
           })
       }
       
-    } else if (offer && !media) {
-      socket?.emit('close', {
-        type: 'media',
-        toId: account_id,
-      })
+    } else if (webrtc.offer && !webrtc.media) {
+      // socket?.emit('close', {
+      //   type: 'media',
+      //   toId: account_id,
+      // })
     }
-
+    
+    console.log(webrtc, 'webrtc')
    
-  }, [pc, media])
+  }, [webrtc])
 
   useEffect(() => {
-    if (pc?.connectionState !== 'connected' && candidate) {
-      pc?.addIceCandidate(new RTCIceCandidate(candidate))
+    if (!webrtc.pc) return
+    if (webrtc.pc.connectionState !== 'connected' && webrtc.candidate) {
+      webrtc.pc.addIceCandidate(new RTCIceCandidate(webrtc.candidate))
     }
-  }, [candidate])
+  }, [webrtc])
 }
