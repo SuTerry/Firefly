@@ -368,7 +368,8 @@ export default (): JSX.Element => {
         const play = playes[key]
         console.log(play.pc?.connectionState, 'play.pc?.connectionState')
         console.log(play.connected, 'play.connected')
-        if (play.pc?.connectionState === 'connected' && !play.connected) {
+        console.log(play.dataChannel?.readyState, 'play.dataChannel?.readyState')
+        if (play.pc?.connectionState === 'connected' && !play.connected && play.dataChannel?.readyState === 'open') {
           const data = {
             type: 'init',
             data: {
@@ -381,7 +382,8 @@ export default (): JSX.Element => {
               }
             }
           }
-          if (play.dataChannel?.readyState === 'open') setTimeout(() => play.dataChannel?.send(JSON.stringify(data)), 300)
+          // setTimeout(() => play.dataChannel?.send(JSON.stringify(data)), 300)
+          play.dataChannel?.send(JSON.stringify(data))
           if (play.identity === 'offer')
             enqueueSnackbar(`Join In ${play.name}`, {
               variant: 'success',
