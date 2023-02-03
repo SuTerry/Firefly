@@ -55,6 +55,7 @@ export default (): void => {
     })
 
     socket.on('offer', async ({ offer, type, media, isMeta, from, play }) => {
+      console.log(`offer - from: ${from}, type ${type}`)
       const _friends = [...friendsRef.current]
       const friend = _friends.find((friend) => friend.account_id === from)
       if (type === 'friend') {
@@ -105,6 +106,7 @@ export default (): void => {
     })
 
     socket.on('answer', async ({ answer, type, from }) => {
+      console.log(`answer - from: ${from}, type ${type}`)
       const _friends = [...friendsRef.current]
       const friend = _friends.find((friend) => friend.account_id === from)
       if (type === 'friend') {
@@ -122,6 +124,7 @@ export default (): void => {
     })
 
     socket.on('candidate', ({ candidate, type, from }) => {
+      console.log(`candidate - from: ${from}, type ${type}`)
       const _friends = [...friendsRef.current]
       const friend = _friends.find((friend) => friend.account_id === from)
       if (type === 'friend') {
@@ -142,7 +145,6 @@ export default (): void => {
     })
 
     socket.on('quit', ({ key }) => {
-
       const play = playesRef.current[key]
       dispatch(removePlay(key))
       if (!play) return

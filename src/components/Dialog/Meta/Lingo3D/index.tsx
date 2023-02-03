@@ -298,7 +298,7 @@ export default (): JSX.Element => {
 
     const keys = Object.keys(playes)
     console.log(playes, 'playes')
-    
+
     keys.forEach((key) => {
       const play = playes[key]
       if (!play.pc) return
@@ -365,8 +365,9 @@ export default (): JSX.Element => {
       const _playes = { ...playes }
       Object.keys(_playes).forEach((key) => {
         const play = playes[key]
+        console.log(play.pc?.connectionState, 'play.pc?.connectionState')
+        console.log(play.connected, 'play.connected')
         if (play.pc?.connectionState === 'connected' && !play.connected) {
-          dispatch(setConnected(key))
           const data = {
             type: 'init',
             data: {
@@ -379,12 +380,12 @@ export default (): JSX.Element => {
               }
             }
           }
-          play.dataChannel?.send(JSON.stringify(data))
-          if (play.identity === 'offer') {
+          if (play.dataChannel?.readyState === 'open') play.dataChannel?.send(JSON.stringify(data))
+          if (play.identity === 'offer')
             enqueueSnackbar(`Join In ${play.name}`, {
               variant: 'success',
             })
-          }
+          dispatch(setConnected(key))
         }
       })
     },
