@@ -174,7 +174,8 @@ export default (): void => {
     })
 
     socket.on('failed', ({ type }) => {
-      if (type === 'failed') {
+      console.log(`failed - type ${type}`)
+      if (type === 'media') {
         const { media, isMeta, friend } = webRTCRef.current
         dispatch(creatOffer({ media: media!, isMeta, friend }))
       }

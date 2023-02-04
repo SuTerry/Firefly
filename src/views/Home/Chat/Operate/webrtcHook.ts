@@ -13,6 +13,7 @@ export default (account_id: string): void => {
   const dispatch = useAppDispatch()
 
   useEffect(() => {
+    console.log(pc, 'pc');
     
     if (pc) {
       if (isOffer) {
