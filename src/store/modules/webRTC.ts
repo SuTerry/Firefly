@@ -60,8 +60,7 @@ export const setOfferRemote = createAsyncThunk(
   'weRTC/setOfferRemote',
   async (answer: RTCSessionDescription, { getState }) => {
     const { pc } = (getState() as RootState).webRTC
-    const { socket } = (getState() as RootState).user
-    return await offerRemote({ pc: pc!, answer, socket: socket! })
+    return await offerRemote({ pc: pc!, answer })
   }
 )
 

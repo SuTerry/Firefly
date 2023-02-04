@@ -37,7 +37,7 @@ export default (account_id: string): void => {
       }
 
       pc.onicecandidate = (event) => {
-        if (event.candidate)
+        if (event.candidate && event.candidate.sdpMid === '0')
           socket?.emit('candidate', {
             type: 'media',
             candidate: event.candidate,

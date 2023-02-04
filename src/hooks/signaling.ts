@@ -84,7 +84,7 @@ export default (): void => {
           toId: friend.account_id,
         })
         pc.onicecandidate = (event) => {
-          if (event.candidate)
+          if (event.candidate && event.candidate.sdpMid === '0')
             socket?.emit('candidate', {
               type: 'friend',
               candidate: event.candidate,
@@ -115,7 +115,7 @@ export default (): void => {
       const friend = _friends.find((friend) => friend.account_id === from)
       if (type === 'friend') {
         if (!friend) return
-        const { pc } = await offerRemote({ pc: friend.pc!, answer, socket })
+        const { pc } = await offerRemote({ pc: friend.pc!, answer })
         dispatch(
           setFriend({ account_id: friend.account_id, pc, connected: true })
         )

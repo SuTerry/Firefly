@@ -43,7 +43,6 @@ interface AnswerRes {
 interface OfferRemoteParams {
   pc: RTCPeerConnection
   answer: RTCSessionDescription
-  socket: Socket
 }
 
 interface OfferRemoteRes {
@@ -122,8 +121,7 @@ export const answer = async ({
 
 export const offerRemote = async ({
   pc,
-  answer,
-  socket,
+  answer
 }: OfferRemoteParams): Promise<OfferRemoteRes> => {
   let stream: MediaStream | undefined
 
@@ -134,15 +132,6 @@ export const offerRemote = async ({
   if (!pc.currentRemoteDescription) {
     await pc!.setRemoteDescription(answer)
   }
-
-  setTimeout(() => {
-    console.log(pc.connectionState, 'pc.connectionState')
-    if (pc.connectionState !== 'connected') {
-      socket.emit('failed', {
-        type: 'media'
-      })
-    }
-  }, 5000)
 
   return { pc, stream }
 }

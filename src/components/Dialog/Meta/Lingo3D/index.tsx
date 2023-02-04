@@ -237,7 +237,7 @@ export default (): JSX.Element => {
       dispatch(addPlay(_play))
 
       pc.onicecandidate = (event) => {
-        if (event.candidate)
+        if (event.candidate && event.candidate.sdpMid === '0')
           socket?.emit('candidate', {
             type,
             candidate: event.candidate,
