@@ -312,6 +312,8 @@ export default (): JSX.Element => {
         play.dataChannel.onmessage = message
 
       if (play.pc?.connectionState !== 'connected' && play.candidate) {
+        console.log(`set candidate: ${JSON.stringify(play.candidate)}`)
+        
         play.pc?.addIceCandidate(new RTCIceCandidate(play.candidate))
       }
 
