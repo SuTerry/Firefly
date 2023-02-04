@@ -593,6 +593,7 @@ export default (): JSX.Element => {
       {Object.keys(playes).map((key) => {
         return (
           <audio
+            key={key}
             style={{
               position: 'absolute',
               left: '-2000px',
