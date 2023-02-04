@@ -350,6 +350,7 @@ export default (): JSX.Element => {
 
   }, [playes])
 
+
   // 其他玩家移动帧
   useLoop(
     () => {
@@ -521,7 +522,7 @@ export default (): JSX.Element => {
                 >
                   <HTML>
                     {talking[key] && <VolumeUp className="player_talk" />}
-                    <audio
+                    {/* <audio
                       style={{
                         position: 'absolute',
                         left: '-2000px',
@@ -529,7 +530,7 @@ export default (): JSX.Element => {
                       }}
                       ref={(el) => (remoteAudioRef.current[key] = el)}
                       autoPlay
-                    ></audio>
+                    ></audio> */}
                   </HTML>
                   <div>
                     <HTMLMesh
@@ -589,6 +590,21 @@ export default (): JSX.Element => {
           }
         </World>
       )}
+      {Object.keys(playes).map((key) => {
+        return (
+          <audio
+            style={{
+              position: 'absolute',
+              left: '-2000px',
+              visibility: 'hidden',
+            }}
+            ref={(el) => (remoteAudioRef.current[key] = el)}
+            autoPlay
+          ></audio>
+        )
+      })
+
+      }
     </>
   )
 }

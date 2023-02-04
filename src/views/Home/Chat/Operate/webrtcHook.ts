@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 import { useAppSelector, useAppDispatch } from '@store/index'
-import { setAnswerChannel } from '@store/modules/webRTC'
+import { setAnswerChannel, setJoinTime } from '@store/modules/webRTC'
 
 export default (account_id: string): void => {
   const { pc, media, isOffer, isMeta, offer, candidate, dataChannel } = useAppSelector(
@@ -31,9 +31,11 @@ export default (account_id: string): void => {
           answer: pc.localDescription,
           toId: account_id,
         })
-        pc.ondatachannel = (event) => {
-          if (!dataChannel) dispatch(setAnswerChannel(event.channel))
-        }
+      }
+
+      pc.ondatachannel = (event) => {
+        console.log(11111111);
+        if (!dataChannel) dispatch(setAnswerChannel(event.channel))
       }
 
       pc.onicecandidate = (event) => {
@@ -59,6 +61,11 @@ export default (account_id: string): void => {
   useEffect(() => {
     console.log(webRTC, 'webRTC');
     
+    if (webRTC.pc && webRTC.pc.connectionState !== 'connected') {
+      setTimeout(() => {
+        dispatch(setJoinTime(new Date().getTime()))
+      }, 1000)
+    }
   }, [webRTC])
   
 
