@@ -92,7 +92,7 @@ export default (): void => {
         }
       } else if (type === 'media') {
         if (!friend) return
-        if (webRTCRef.current.isUse) {
+        if (webRTCRef.current.isUse && from !== webRTCRef.current.friend?.account_id) {
           // send close
           socket?.emit('close', {
             type: 'media',
@@ -176,7 +176,7 @@ export default (): void => {
     socket.on('failed', ({ type }) => {
       if (type === 'failed') {
         const { media, isMeta, friend } = webRTCRef.current
-        creatOffer({ media: media!, isMeta, friend })
+        dispatch(creatOffer({ media: media!, isMeta, friend }))
       }
     })
 
