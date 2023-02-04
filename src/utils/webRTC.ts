@@ -6,6 +6,7 @@ import { Friends, pushRemotes } from '@store/modules/friends'
 
 import type { AppDispatch } from '@store/index'
 import type { InitPlay } from '@store/modules/room'
+import type { Socket } from 'socket.io-client'
 
 
 
@@ -42,6 +43,7 @@ interface AnswerRes {
 interface OfferRemoteParams {
   pc: RTCPeerConnection
   answer: RTCSessionDescription
+  socket: Socket
 }
 
 interface OfferRemoteRes {
@@ -121,6 +123,7 @@ export const answer = async ({
 export const offerRemote = async ({
   pc,
   answer,
+  socket,
 }: OfferRemoteParams): Promise<OfferRemoteRes> => {
   let stream: MediaStream | undefined
 
@@ -128,14 +131,16 @@ export const offerRemote = async ({
     stream = event.streams[0]
   }
 
-  console.log(pc.currentRemoteDescription, 'pc.currentRemoteDescription')
-  
   if (!pc.currentRemoteDescription) {
     await pc!.setRemoteDescription(answer)
   }
 
   setTimeout(() => {
-    console.log(pc, 'pc')
+    if (pc.connectionState !== 'connected') {
+      socket.emit('failed', {
+        type: 'media'
+      })
+    }
   }, 1000)
 
   return { pc, stream }

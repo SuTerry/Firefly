@@ -8,6 +8,7 @@ import { useAppSelector, useAppDispatch } from '@store/index'
 import { setSocket } from '@store/modules/user'
 import { setFriends, setFriend, initFriend } from '@store/modules/friends'
 import {
+  creatOffer,
   setOfferRequest,
   initWebRTCState,
   setOfferRemote,
@@ -27,7 +28,7 @@ import { answer, offerRemote, dataChannelMessage } from '@utils/webRTC'
 
 export default (): void => {
   const { enqueueSnackbar } = useSnackbar()
-  
+
   const { accountAddress } = useAppSelector((store) => store.wallet)
   const { friends } = useAppSelector((store) => store.friends)
   const webRTC = useAppSelector((store) => store.webRTC)
@@ -111,7 +112,7 @@ export default (): void => {
       const friend = _friends.find((friend) => friend.account_id === from)
       if (type === 'friend') {
         if (!friend) return
-        const { pc } = await offerRemote({ pc: friend.pc!, answer })
+        const { pc } = await offerRemote({ pc: friend.pc!, answer, socket })
         dispatch(
           setFriend({ account_id: friend.account_id, pc, connected: true })
         )
@@ -119,7 +120,7 @@ export default (): void => {
         if (!friend) return
         dispatch(setOfferRemote(answer))
       } else if (type === 'room') {
-        dispatch(setRoomOfferRemote({answer, key: from}))
+        dispatch(setRoomOfferRemote({ answer, key: from }))
       }
     })
 
@@ -170,6 +171,13 @@ export default (): void => {
       dispatch(initFriend(_friends))
 
       if (webRTCRef.current.isUse) dispatch(initWebRTCState())
+    })
+
+    socket.on('failed', ({ type }) => {
+      if (type === 'failed') {
+        const { media, isMeta, friend } = webRTCRef.current
+        creatOffer({ media: media!, isMeta, friend })
+      }
     })
 
     window.addEventListener('unload', () => {
