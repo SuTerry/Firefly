@@ -97,11 +97,6 @@ const webRTC = createSlice({
         pc,
       })
     },
-    setJoinTime(state, { payload }: PayloadAction<number>) {
-      state = Object.assign(state, {
-        joinTime: payload
-      })
-    },
   },
   extraReducers(builder) {
     builder.addCase(creatOffer.pending, (state) => {
@@ -146,5 +141,5 @@ const webRTC = createSlice({
   },
 })
 
-export const { setOfferRequest, setAnswerChannel, setCandidate, setJoinTime } = webRTC.actions
+export const { setOfferRequest, setAnswerChannel, setCandidate } = webRTC.actions
 export default webRTC.reducer

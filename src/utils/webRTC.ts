@@ -128,9 +128,15 @@ export const offerRemote = async ({
     stream = event.streams[0]
   }
 
+  console.log(pc.currentRemoteDescription, 'pc.currentRemoteDescription')
+  
   if (!pc.currentRemoteDescription) {
     await pc!.setRemoteDescription(answer)
   }
+
+  setTimeout(() => {
+    console.log(pc, 'pc')
+  }, 1000)
 
   return { pc, stream }
 }
