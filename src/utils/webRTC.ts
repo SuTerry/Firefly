@@ -141,7 +141,7 @@ export const offerRemote = async ({
         type: 'media'
       })
     }
-  }, 1000)
+  }, 5000)
 
   return { pc, stream }
 }
