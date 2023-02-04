@@ -124,7 +124,7 @@ export default (): void => {
     })
 
     socket.on('candidate', ({ candidate, type, from }) => {
-      console.log(`candidate - from: ${from}, type ${type}`)
+      console.log(`candidate - from: ${from}, type ${type}, candidate: ${JSON.stringify(candidate)}`)
       const _friends = [...friendsRef.current]
       const friend = _friends.find((friend) => friend.account_id === from)
       if (type === 'friend') {
