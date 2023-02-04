@@ -136,6 +136,7 @@ export const offerRemote = async ({
   }
 
   setTimeout(() => {
+    console.log(pc.connectionState, 'pc.connectionState')
     if (pc.connectionState !== 'connected') {
       socket.emit('failed', {
         type: 'media'

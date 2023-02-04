@@ -121,13 +121,11 @@ const webRTC = createSlice({
       state.pc?.close()
       state.localStream?.getTracks().forEach((track) => track.stop())
       state.stream?.clone()
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       state = Object.assign(state, {
         isAnswer: true,
         joinTime: new Date().getTime(),
         pc: undefined,
         dataChannel: undefined,
-        candidate: undefined,
         stream: undefined
       })
     })

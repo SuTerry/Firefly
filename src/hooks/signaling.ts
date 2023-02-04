@@ -9,6 +9,7 @@ import { setSocket } from '@store/modules/user'
 import { setFriends, setFriend, initFriend } from '@store/modules/friends'
 import {
   creatOffer,
+  creatAnswer,
   setOfferRequest,
   initWebRTCState,
   setOfferRemote,
@@ -98,6 +99,8 @@ export default (): void => {
             type: 'media',
             toId: friend.account_id,
           })
+        } else if (webRTCRef.current.isUse && from === webRTCRef.current.friend?.account_id) {
+          dispatch(creatAnswer())
         } else {
           dispatch(setOfferRequest({ friend, media, offer, isMeta }))
         }
